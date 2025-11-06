@@ -16,6 +16,8 @@ let currentTheme = 'default';
 let currentSvg = '';
 let messageTimer = null;
 let renderToken = 0;
+let reportedVersion = '';
+let mermaidMeta = null;
 
 const DEFAULT_CONFIG = {
   startOnLoad: false,
@@ -35,10 +37,48 @@ function initializeMermaid() {
   try {
     const version = window.mermaid.version ? window.mermaid.version() : window.mermaid.mermaidAPI?.version();
     if (version) {
-      versionLabel.textContent = `版本：${version}`;
+      reportedVersion = version;
+      updateVersionLabel();
     }
   } catch (err) {
     console.warn('无法读取 Mermaid 版本信息：', err);
+  }
+}
+
+function updateVersionLabel() {
+  const parts = [];
+  if (reportedVersion) {
+    parts.push(`版本：${reportedVersion}`);
+  }
+  if (mermaidMeta?.source) {
+    const sourceMap = {
+      bundled: '来源：内置',
+      'GitHub Releases': '来源：GitHub Release',
+      'jsDelivr CDN': '来源：jsDelivr',
+      'unpkg CDN': '来源：unpkg'
+    };
+    parts.push(sourceMap[mermaidMeta.source] || `来源：${mermaidMeta.source}`);
+  }
+  if (mermaidMeta?.downloadedAt) {
+    const date = new Date(mermaidMeta.downloadedAt);
+    if (!Number.isNaN(date.getTime())) {
+      parts.push(`更新：${date.toISOString().slice(0, 10)}`);
+    }
+  }
+
+  versionLabel.textContent = parts.join(' · ') || '版本：未知';
+}
+
+async function loadMermaidMeta() {
+  try {
+    const response = await fetch('vendor/mermaid-meta.json', { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    mermaidMeta = await response.json();
+    updateVersionLabel();
+  } catch (error) {
+    console.warn('读取 mermaid-meta.json 失败：', error);
   }
 }
 
@@ -249,6 +289,7 @@ document.body.dataset.theme = currentTheme;
 themeToggle.checked = currentTheme === 'dark';
 themeLabel.textContent = currentTheme === 'dark' ? '深色主题' : '浅色主题';
 initializeMermaid();
+loadMermaidMeta();
 populateExampleSelect();
 populateExampleGrid();
 bindEvents();

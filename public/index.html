@@ -10,7 +10,9 @@
       if (!window.mermaid) {
         const warning = document.createElement('div');
         warning.className = 'global-error';
-        warning.innerHTML = '<strong>未找到 mermaid.min.js。</strong> 请先运行 <code>npm run fetch:mermaid</code> 或手动将最新的 mermaid 构建文件放入 <code>public/vendor</code> 目录。';
+        warning.innerHTML =
+          '<strong>未加载到内置的 mermaid.min.js。</strong> 请确认仓库中的 <code>public/vendor/mermaid.min.js</code> 未被删除，' +
+          '或运行 <code>npm run fetch:mermaid</code> 获取最新版本。';
         document.body.prepend(warning);
       }
     });

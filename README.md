@@ -4,21 +4,33 @@
 
 ## 功能特性
 
-- 🚀 **离线可用**：通过脚本一次性下载最新的 `mermaid.min.js` 后即可离线渲染。
+- 🚀 **开箱即用**：仓库自带 `public/vendor/mermaid.min.js`（当前为 v11.12.1），即使没有联网也能立即渲染。
 - 🧩 **示例丰富**：内置流程图、时序图、类图、状态机、ER 图、旅程图、甘特图、思维导图等常用模板。
 - 🛠️ **编辑体验**：支持快捷渲染（Ctrl/⌘ + Enter）、复制代码、SVG 导出、主题切换。
 - 🔍 **语法校验**：渲染前自动调用 `mermaid.parse`，第一时间暴露语法错误。
 
 ## 使用指南
 
-1. **下载依赖文件（首次执行即可）**
+1. **准备依赖文件（默认已准备好）**
 
    ```bash
    npm install
-   npm run fetch:mermaid
    ```
 
-   > 脚本默认通过 HTTPS 访问 npm Registry 与 jsDelivr。如果所在环境需要代理或无法联网，请手动下载最新的 `mermaid.min.js`（可在 [Mermaid 官方发布页](https://github.com/mermaid-js/mermaid) 找到），并放入 `public/vendor/` 目录。
+   > 仓库已经内置 Mermaid v11.12.1 的构建文件，无需额外操作即可离线运行。
+
+   - **需要升级 Mermaid 版本时**：运行 `npm run fetch:mermaid`。脚本会先尝试从 GitHub Release（`https://github.com/mermaid-js/mermaid/releases/download/vX.Y.Z/mermaid.min.js`）下载，若该版本未提供构建产物，则自动回退到 jsDelivr / unpkg CDN，并在 `public/vendor/mermaid-meta.json` 中记录来源与时间。
+   - **完全手动下载**：优先从 GitHub Release 页面下载 `mermaid.min.js` 并覆盖到 `public/vendor/`，同时更新 `mermaid-meta.json` 中的 `version` 与 `downloadUrl`。若 GitHub 未提供构建产物，可使用 CDN 备选方案：
+
+     ```bash
+     # GitHub Release（若该版本提供）
+     curl -L "https://github.com/mermaid-js/mermaid/releases/download/v11.12.1/mermaid.min.js" -o public/vendor/mermaid.min.js
+
+     # CDN 备选
+     curl -L "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.min.js" -o public/vendor/mermaid.min.js
+     ```
+
+   > 下载脚本会自动读取 `HTTPS_PROXY` / `HTTP_PROXY` 环境变量。如需在需要代理的网络中执行，可在运行命令前设置环境变量（例如 `export HTTPS_PROXY="http://127.0.0.1:7890"`）。
 
 2. **启动本地预览服务器（可选）**
 
@@ -44,12 +56,103 @@ LocalMermaid/
 │   │   ├── app.js             # 前端逻辑与渲染控制
 │   │   └── styles.css         # 页面样式
 │   ├── index.html             # 页面入口
-│   └── vendor/                # 存放离线的 mermaid.min.js
-│       └── .gitkeep
+│   └── vendor/                # 存放离线的 mermaid 发行文件
+│       ├── mermaid.min.js     # 仓库默认内置的 Mermaid v11.12.1
+│       └── mermaid-meta.json  # 记录来源、版本、更新时间
 ├── scripts/
 │   ├── download-mermaid.cjs   # 下载最新 mermaid 的辅助脚本
 │   └── serve.cjs              # 简易静态服务器（可选）
 └── README.md
+```
+
+## 系统架构图
+
+```mermaid
+graph TD
+  A[用户浏览器] -->|打开| B[index.html]
+  B --> C[assets/app.js]
+  C --> D[Mermaid 渲染引擎<br/>public/vendor/mermaid.min.js (内置)]
+  C --> E[assets/examples.js]
+  C --> F[assets/styles.css]
+  D --> I[mermaid-meta.json]
+  G[scripts/download-mermaid.cjs] --> D
+  G --> I
+  H[scripts/serve.cjs] --> A
+```
+
+## 数据流图
+
+```mermaid
+flowchart LR
+  subgraph 浏览器
+    Input[编辑器输入] --> Validate[mermaid.parse 校验]
+    Validate -->|成功| Render[mermaid.render]
+    Validate -->|失败| ErrorBox[错误提示]
+    Render --> Preview[SVG 预览]
+    Render --> SvgBlob[SVG 导出]
+    Examples[示例库选择] --> Input
+    Theme[主题切换] --> Config[Mermaid 配置]
+    Config --> Render
+  end
+  DownloadScript[download-mermaid.cjs] -->|GitHub Release 优先| Github[mermaid.min.js]
+  DownloadScript -->|CDN 回退| CDN[jsDelivr / unpkg]
+  Github --> MermaidBundle[更新后的 mermaid.min.js]
+  CDN --> MermaidBundle
+  Bundled[仓库内置的 mermaid.min.js] --> Render
+  MermaidBundle --> Render
+  Bundled --> Meta[mermaid-meta.json]
+  MermaidBundle --> Meta
+  Meta --> VersionLabel[版本信息展示]
+  VersionLabel --> UserFeedback[界面提示]
+```
+
+## 调用图
+
+```mermaid
+graph TD
+  init[initializeMermaid]
+  populateSelect[populateExampleSelect]
+  populateGrid[populateExampleGrid]
+  bind[bindEvents]
+  loadExample
+  render[renderDiagram]
+  copy[copyCode]
+  download[downloadSvg]
+  message[showTempMessage]
+  applyTheme
+
+  init --> render
+  bind --> render
+  bind --> copy
+  bind --> download
+  bind --> loadExample
+  loadExample --> render
+  render --> message
+  download --> message
+  copy --> message
+  bind --> applyTheme
+  applyTheme --> render
+```
+
+## 用户视角用例
+
+```mermaid
+usecaseDiagram
+  actor User
+  rectangle LocalMermaid {
+    usecase UC1 as "选择预置示例"
+    usecase UC2 as "编辑并渲染 Mermaid 图"
+    usecase UC3 as "查看渲染错误提示"
+    usecase UC4 as "复制当前代码"
+    usecase UC5 as "导出 SVG 文件"
+    usecase UC6 as "切换浅色/深色主题"
+  }
+  User --> UC1
+  User --> UC2
+  User --> UC3
+  User --> UC4
+  User --> UC5
+  User --> UC6
 ```
 
 ## 许可证
