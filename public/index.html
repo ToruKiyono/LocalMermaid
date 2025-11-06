@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Mermaid Studio</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!window.mermaid) {
+        const warning = document.createElement('div');
+        warning.className = 'global-error';
+        warning.innerHTML =
+          '<strong>未加载到内置的 mermaid.min.js。</strong> 请确认仓库中的 <code>public/vendor/mermaid.min.js</code> 未被删除，' +
+          '或运行 <code>npm run fetch:mermaid</code> 获取最新版本。';
+        document.body.prepend(warning);
+      }
+    });
+  </script>
+  <script src="vendor/mermaid.min.js"></script>
+  <script type="module" src="assets/app.js" defer></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__content">
+      <h1>Local Mermaid Studio</h1>
+      <p>在完全离线的环境下编写、渲染并调试 Mermaid 图表。</p>
+      <div class="hero__actions">
+        <a class="btn" href="#editor">开始绘制</a>
+        <a class="btn btn--ghost" href="#examples">查看示例</a>
+      </div>
+    </div>
+  </header>
+  <main class="layout">
+    <section class="panel panel--editor" id="editor">
+      <div class="panel__header">
+        <h2>Mermaid 编辑器</h2>
+        <div class="panel__actions">
+          <button type="button" id="renderButton" class="btn btn--small">渲染 (Ctrl + Enter)</button>
+          <button type="button" id="copyButton" class="btn btn--small btn--ghost">复制代码</button>
+          <button type="button" id="downloadButton" class="btn btn--small btn--ghost">导出 SVG</button>
+        </div>
+      </div>
+      <textarea id="mermaidInput" spellcheck="false" placeholder="在这里输入 Mermaid 代码..."></textarea>
+      <div class="panel__footer">
+        <label for="exampleSelect">快速载入示例：</label>
+        <select id="exampleSelect"></select>
+      </div>
+    </section>
+    <section class="panel panel--preview" id="previewPanel">
+      <div class="panel__header">
+        <h2>渲染结果</h2>
+        <div class="theme-toggle">
+          <label class="switch">
+            <input type="checkbox" id="themeToggle" />
+            <span class="slider"></span>
+          </label>
+          <span id="themeLabel">浅色主题</span>
+        </div>
+      </div>
+      <div id="errorBox" role="alert"></div>
+      <div id="preview" aria-live="polite"></div>
+    </section>
+  </main>
+  <section class="examples" id="examples">
+    <h2>内置示例</h2>
+    <div class="examples__grid" id="examplesGrid"></div>
+  </section>
+  <footer class="footer">
+    <p>Mermaid 最新版本离线体验站 · <span id="versionLabel">版本：未知</span></p>
+  </footer>
+</body>
+</html>
