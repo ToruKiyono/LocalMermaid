@@ -6,8 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const https = require('node:https');
 const { URL } = require('node:url');
-const { getProxyForUrl } = require('proxy-from-env');
-const { HttpsProxyAgent } = require('https-proxy-agent');
+const { getProxyForUrl, createHttpProxyAgent } = require('./lib/proxy');
 
 const DEST_DIR = path.resolve(__dirname, '../public/vendor');
 const DEST_FILE = path.join(DEST_DIR, 'mermaid.min.js');
@@ -54,9 +53,13 @@ async function main() {
     );
     console.log(`下载完成，文件已保存到 ${DEST_FILE}（来源：${sourceName}）`);
   } catch (error) {
-    console.error('下载失败：', error.message || error);
+    console.error('下载失败：', formatError(error));
     if (error?.response?.statusCode) {
       console.error(`HTTP 状态码：${error.response.statusCode}`);
+    }
+    if (error instanceof AggregateError && error.errors?.length) {
+      const nested = error.errors.map((item) => formatError(item)).join('；');
+      console.error(`详细错误：${nested}`);
     }
     if (!process.env.HTTPS_PROXY && !process.env.HTTP_PROXY) {
       console.error('如需通过代理访问，请设置 HTTPS_PROXY 或 HTTP_PROXY 环境变量后重试。');
@@ -85,7 +88,7 @@ async function downloadWithFallback(version) {
       return { sourceName: source.name, downloadUrl: url };
     } catch (error) {
       lastError = error;
-      console.warn(`${source.name} 下载失败（${error.message || error}），尝试下一个来源。`);
+      console.warn(`${source.name} 下载失败（${formatError(error)}），尝试下一个来源。`);
     }
   }
 
@@ -188,11 +191,39 @@ function buildAgent(targetUrl) {
     return undefined;
   }
 
+  const agent = createHttpProxyAgent(proxyUrl);
+  if (!agent) {
+    console.warn('代理不可用或协议不受支持，改为直接发起请求。');
+  }
+  return agent;
+}
+
+function formatError(error) {
+  if (!error) {
+    return '未知错误';
+  }
+
+  if (error instanceof AggregateError) {
+    const base = error.message && error.message !== 'AggregateError' ? error.message : '请求失败';
+    if (error.errors?.length) {
+      const nested = error.errors.map((item) => formatError(item)).join('；');
+      return `${base}（${nested}）`;
+    }
+    return base;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error?.message) {
+    return error.message;
+  }
+
   try {
-    return new HttpsProxyAgent(proxyUrl);
-  } catch (error) {
-    console.warn(`代理地址无效（${proxyUrl}），将直接发起请求：${error.message}`);
-    return undefined;
+    return JSON.stringify(error);
+  } catch (_) {
+    return String(error);
   }
 }
 

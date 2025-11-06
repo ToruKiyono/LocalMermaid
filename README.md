@@ -11,13 +11,15 @@
 
 ## 使用指南
 
-1. **准备依赖文件（默认已准备好）**
+1. **立即可用的离线包**
+
+   > 仓库已经内置 Mermaid v11.12.1 的构建文件与静态资源，无需执行任何安装命令即可直接打开 `public/index.html` 使用。
 
    ```bash
    npm install
    ```
 
-   > 仓库已经内置 Mermaid v11.12.1 的构建文件，无需额外操作即可离线运行。
+   > 可选：如需验证 Node.js 与 NPM 是否可用，可运行 `npm install`。项目不再依赖任何第三方包，该命令会瞬间完成且不会访问外网。
 
    - **需要升级 Mermaid 版本时**：运行 `npm run fetch:mermaid`。脚本会先尝试从 GitHub Release（`https://github.com/mermaid-js/mermaid/releases/download/vX.Y.Z/mermaid.min.js`）下载，若该版本未提供构建产物，则自动回退到 jsDelivr / unpkg CDN，并在 `public/vendor/mermaid-meta.json` 中记录来源与时间。
    - **完全手动下载**：优先从 GitHub Release 页面下载 `mermaid.min.js` 并覆盖到 `public/vendor/`，同时更新 `mermaid-meta.json` 中的 `version` 与 `downloadUrl`。若 GitHub 未提供构建产物，可使用 CDN 备选方案：
@@ -30,7 +32,7 @@
      curl -L "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.min.js" -o public/vendor/mermaid.min.js
      ```
 
-   > 下载脚本会自动读取 `HTTPS_PROXY` / `HTTP_PROXY` 环境变量。如需在需要代理的网络中执行，可在运行命令前设置环境变量（例如 `export HTTPS_PROXY="http://127.0.0.1:7890"`）。
+   > 下载脚本会自动读取 `HTTPS_PROXY` / `HTTP_PROXY` 环境变量（目前支持 `http://` 代理）。如需在需要代理的网络中执行，可在运行命令前设置环境变量（例如 `export HTTPS_PROXY="http://127.0.0.1:7890"`）。
 
 2. **启动本地预览服务器（可选）**
 
@@ -61,6 +63,8 @@ LocalMermaid/
 │       └── mermaid-meta.json  # 记录来源、版本、更新时间
 ├── scripts/
 │   ├── download-mermaid.cjs   # 下载最新 mermaid 的辅助脚本
+│   ├── lib/
+│   │   └── proxy.js           # 轻量代理解析与 CONNECT 实现
 │   └── serve.cjs              # 简易静态服务器（可选）
 └── README.md
 ```
@@ -77,6 +81,8 @@ graph TD
   D --> I[mermaid-meta.json]
   G[scripts/download-mermaid.cjs] --> D
   G --> I
+  G --> J[scripts/lib/proxy.js]
+  J --> K[代理环境变量<br/>HTTP CONNECT]
   H[scripts/serve.cjs] --> A
 ```
 
@@ -96,6 +102,8 @@ flowchart LR
   end
   DownloadScript[download-mermaid.cjs] -->|GitHub Release 优先| Github[mermaid.min.js]
   DownloadScript -->|CDN 回退| CDN[jsDelivr / unpkg]
+  DownloadScript --> ProxyHelper[lib/proxy.js]
+  ProxyHelper --> ProxyEnv[HTTPS_PROXY / HTTP_PROXY]
   Github --> MermaidBundle[更新后的 mermaid.min.js]
   CDN --> MermaidBundle
   Bundled[仓库内置的 mermaid.min.js] --> Render
