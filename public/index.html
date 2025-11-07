@@ -41,7 +41,15 @@
           <button type="button" id="downloadButton" class="btn btn--small btn--ghost">导出 SVG</button>
         </div>
       </div>
-      <textarea id="mermaidInput" spellcheck="false" placeholder="在这里输入 Mermaid 代码..."></textarea>
+      <div class="editor" data-editor>
+        <pre id="highlightLayer" class="editor__highlight" aria-hidden="true"></pre>
+        <textarea
+          id="mermaidInput"
+          spellcheck="false"
+          placeholder="在这里输入 Mermaid 代码..."
+          aria-label="Mermaid 编辑器"
+        ></textarea>
+      </div>
       <div class="panel__footer">
         <label for="exampleSelect">快速载入示例：</label>
         <select id="exampleSelect"></select>
@@ -50,12 +58,16 @@
     <section class="panel panel--preview" id="previewPanel">
       <div class="panel__header">
         <h2>渲染结果</h2>
-        <div class="theme-toggle">
-          <label class="switch">
-            <input type="checkbox" id="themeToggle" />
-            <span class="slider"></span>
-          </label>
-          <span id="themeLabel">浅色主题</span>
+        <div class="panel__actions panel__actions--preview">
+          <button type="button" id="copyDiagramButton" class="btn btn--small btn--ghost">复制 PNG</button>
+          <button type="button" id="downloadPngButton" class="btn btn--small btn--ghost">下载 PNG</button>
+          <div class="theme-toggle">
+            <label class="switch">
+              <input type="checkbox" id="themeToggle" />
+              <span class="slider"></span>
+            </label>
+            <span id="themeLabel">浅色主题</span>
+          </div>
         </div>
       </div>
       <div id="errorBox" role="alert"></div>

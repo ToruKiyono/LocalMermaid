@@ -24,10 +24,13 @@ const server = http.createServer((req, res) => {
   let relativePath = decodeURIComponent(requestUrl.pathname);
 
   if (relativePath.endsWith('/')) {
-    relativePath = path.join(relativePath, 'index.html');
+    relativePath = `${relativePath}index.html`;
   }
 
-  const filePath = path.resolve(ROOT, relativePath.replace(/^\/+/, ''));
+  // `path.join` 会在 Windows 下把 `/` 拼接成以反斜杠开头的绝对路径，
+  // 因此我们仅移除前导斜杠，确保最终解析结果始终在静态目录内。
+  const sanitized = relativePath.replace(/^[/\\]+/, '');
+  const filePath = path.resolve(ROOT, sanitized);
 
   if (!filePath.startsWith(ROOT)) {
     res.writeHead(403);

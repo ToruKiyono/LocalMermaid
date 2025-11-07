@@ -4,6 +4,8 @@ const mermaidInput = document.getElementById('mermaidInput');
 const renderButton = document.getElementById('renderButton');
 const copyButton = document.getElementById('copyButton');
 const downloadButton = document.getElementById('downloadButton');
+const copyDiagramButton = document.getElementById('copyDiagramButton');
+const downloadPngButton = document.getElementById('downloadPngButton');
 const preview = document.getElementById('preview');
 const errorBox = document.getElementById('errorBox');
 const exampleSelect = document.getElementById('exampleSelect');
@@ -11,6 +13,7 @@ const examplesGrid = document.getElementById('examplesGrid');
 const themeToggle = document.getElementById('themeToggle');
 const themeLabel = document.getElementById('themeLabel');
 const versionLabel = document.getElementById('versionLabel');
+const highlightLayer = document.getElementById('highlightLayer');
 
 let currentTheme = 'default';
 let currentSvg = '';
@@ -18,6 +21,24 @@ let messageTimer = null;
 let renderToken = 0;
 let reportedVersion = '';
 let mermaidMeta = null;
+
+const HIGHLIGHT_RULES = [
+  { regex: /%%[^\n]*/g, className: 'token-comment', priority: 0 },
+  { regex: /"[^"\n]*"|'[^'\n]*'/g, className: 'token-string', priority: 1 },
+  {
+    regex:
+      /\b(sequenceDiagram|classDiagram|stateDiagram-v2|stateDiagram|erDiagram|journey|gantt|gitGraph|mindmap|quadrantChart|timeline|flowchart|flowchart-v2|graph|pie)\b/g,
+    className: 'token-keyword',
+    priority: 2
+  },
+  {
+    regex:
+      /\b(subgraph|end|direction|TB|TD|LR|RL|BT|classDef|style|linkStyle|click|accTitle|accDescr|accDescription|activate|deactivate|alt|opt|loop|par|and|rect|else|note\s+(?:left|right|over))\b/g,
+    className: 'token-directive',
+    priority: 3
+  },
+  { regex: /\b\d+(?:\.\d+)?\b/g, className: 'token-number', priority: 4 }
+];
 
 const DEFAULT_CONFIG = {
   startOnLoad: false,
@@ -122,6 +143,7 @@ function loadExample(id) {
   if (!example) return;
   mermaidInput.value = example.code;
   exampleSelect.value = id;
+  updateHighlight();
   renderDiagram();
 }
 
@@ -232,6 +254,55 @@ function downloadSvg() {
   showTempMessage('SVG 导出成功');
 }
 
+async function copyDiagramImage() {
+  if (!currentSvg) {
+    errorBox.textContent = '请先渲染图表，再复制图像。';
+    errorBox.style.color = '';
+    return;
+  }
+
+  if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+    errorBox.textContent = '当前浏览器不支持复制 PNG，请尝试下载后手动复制。';
+    errorBox.style.color = '';
+    return;
+  }
+
+  try {
+    const blob = await svgToPngBlob(currentSvg);
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    showTempMessage('PNG 图像已复制到剪贴板');
+  } catch (err) {
+    console.error(err);
+    errorBox.textContent = '复制 PNG 失败，请检查浏览器权限或重试。';
+    errorBox.style.color = '';
+  }
+}
+
+async function downloadPng() {
+  if (!currentSvg) {
+    errorBox.textContent = '请先渲染图表，再下载 PNG。';
+    errorBox.style.color = '';
+    return;
+  }
+
+  try {
+    const blob = await svgToPngBlob(currentSvg);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `mermaid-diagram-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showTempMessage('PNG 下载完成');
+  } catch (err) {
+    console.error(err);
+    errorBox.textContent = '导出 PNG 失败，请重试。';
+    errorBox.style.color = '';
+  }
+}
+
 function showTempMessage(message) {
   if (messageTimer) {
     clearTimeout(messageTimer);
@@ -251,6 +322,12 @@ function bindEvents() {
   renderButton.addEventListener('click', renderDiagram);
   downloadButton.addEventListener('click', downloadSvg);
   copyButton.addEventListener('click', copyCode);
+  if (copyDiagramButton) {
+    copyDiagramButton.addEventListener('click', copyDiagramImage);
+  }
+  if (downloadPngButton) {
+    downloadPngButton.addEventListener('click', downloadPng);
+  }
 
   exampleSelect.addEventListener('change', (event) => {
     loadExample(event.target.value);
@@ -261,6 +338,9 @@ function bindEvents() {
       renderDiagram();
     }
   });
+
+  mermaidInput.addEventListener('input', updateHighlight);
+  mermaidInput.addEventListener('scroll', syncScrollPosition);
 
   themeToggle.addEventListener('change', (event) => {
     const nextTheme = event.target.checked ? 'dark' : 'default';
@@ -285,6 +365,170 @@ function setInitialExample() {
   loadExample(examples[0].id);
 }
 
+function buildHighlightedHtml(source) {
+  if (!source) {
+    return '&nbsp;';
+  }
+
+  const matches = [];
+
+  HIGHLIGHT_RULES.forEach((rule) => {
+    const regex = new RegExp(rule.regex.source, rule.regex.flags);
+    let match;
+    while ((match = regex.exec(source)) !== null) {
+      matches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        className: rule.className,
+        priority: rule.priority
+      });
+
+      if (match.index === regex.lastIndex) {
+        regex.lastIndex += 1;
+      }
+    }
+  });
+
+  matches.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    if (a.end !== b.end) return b.end - a.end;
+    return a.priority - b.priority;
+  });
+
+  const filtered = [];
+  let lastEnd = -1;
+
+  matches.forEach((match) => {
+    if (match.start >= lastEnd) {
+      filtered.push(match);
+      lastEnd = match.end;
+    }
+  });
+
+  let cursor = 0;
+  let html = '';
+
+  filtered.forEach((match) => {
+    if (cursor < match.start) {
+      html += escapeHtml(source.slice(cursor, match.start));
+    }
+    html += `<span class="${match.className}">${escapeHtml(source.slice(match.start, match.end))}</span>`;
+    cursor = match.end;
+  });
+
+  if (cursor < source.length) {
+    html += escapeHtml(source.slice(cursor));
+  }
+
+  return html || '&nbsp;';
+}
+
+function updateHighlight() {
+  if (!highlightLayer) return;
+  highlightLayer.innerHTML = buildHighlightedHtml(mermaidInput.value);
+  highlightLayer.style.transform = `translate(${-mermaidInput.scrollLeft}px, ${-mermaidInput.scrollTop}px)`;
+}
+
+function syncScrollPosition() {
+  if (!highlightLayer) return;
+  highlightLayer.style.transform = `translate(${-mermaidInput.scrollLeft}px, ${-mermaidInput.scrollTop}px)`;
+}
+
+function parseSvgDimensions(svgString) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgString, 'image/svg+xml');
+    const svg = doc.documentElement;
+    const widthAttr = svg.getAttribute('width');
+    const heightAttr = svg.getAttribute('height');
+    let width = Number.parseFloat(widthAttr);
+    let height = Number.parseFloat(heightAttr);
+
+    if ((!Number.isFinite(width) || width <= 0 || /%$/.test(widthAttr || '')) && svg.getAttribute('viewBox')) {
+      const [, , viewBoxWidth, viewBoxHeight] = svg
+        .getAttribute('viewBox')
+        .split(/\s+/)
+        .map((value) => Number.parseFloat(value));
+      if (Number.isFinite(viewBoxWidth)) {
+        width = viewBoxWidth;
+      }
+      if (Number.isFinite(viewBoxHeight)) {
+        height = viewBoxHeight;
+      }
+    }
+
+    if (!Number.isFinite(width) || width <= 0) {
+      width = 1024;
+    }
+    if (!Number.isFinite(height) || height <= 0) {
+      height = 768;
+    }
+
+    return { width, height };
+  } catch (error) {
+    console.warn('无法解析 SVG 尺寸，使用默认值。', error);
+    return { width: 1024, height: 768 };
+  }
+}
+
+function svgToPngBlob(svgString) {
+  const { width, height } = parseSvgDimensions(svgString);
+  const scale = Math.min(3, Math.max(1, 2048 / Math.max(width, height)));
+
+  return new Promise((resolve, reject) => {
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(width * scale));
+      canvas.height = Math.max(1, Math.round(height * scale));
+      const ctx = canvas.getContext('2d');
+      const background = getComputedStyle(document.body).getPropertyValue('--color-bg') || '#ffffff';
+      ctx.fillStyle = background.trim() || '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      const finalize = (blob) => {
+        URL.revokeObjectURL(url);
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('PNG 导出失败：无法生成图像。'));
+        }
+      };
+
+      if (canvas.toBlob) {
+        canvas.toBlob((blob) => {
+          finalize(blob);
+        }, 'image/png');
+        return;
+      }
+
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        const byteString = atob(dataUrl.split(',')[1]);
+        const buffer = new Uint8Array(byteString.length);
+        for (let i = 0; i < byteString.length; i += 1) {
+          buffer[i] = byteString.charCodeAt(i);
+        }
+        finalize(new Blob([buffer], { type: 'image/png' }));
+      } catch (conversionError) {
+        URL.revokeObjectURL(url);
+        reject(new Error('PNG 导出失败：浏览器不支持必要的 API。'));
+      }
+    };
+
+    image.onerror = (event) => {
+      URL.revokeObjectURL(url);
+      reject(new Error('无法加载 SVG 以生成 PNG。'));
+    };
+
+    image.src = url;
+  });
+}
+
 document.body.dataset.theme = currentTheme;
 themeToggle.checked = currentTheme === 'dark';
 themeLabel.textContent = currentTheme === 'dark' ? '深色主题' : '浅色主题';
@@ -293,5 +537,6 @@ loadMermaidMeta();
 populateExampleSelect();
 populateExampleGrid();
 bindEvents();
+updateHighlight();
 setInitialExample();
 

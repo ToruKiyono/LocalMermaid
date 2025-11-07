@@ -13,8 +13,13 @@
   --editor-bg-focus: rgba(15, 23, 42, 0.12);
   --card-bg: rgba(255, 255, 255, 0.82);
   --card-soft: rgba(241, 245, 249, 0.75);
-  --panel-radius: 18px;
+  --panel-radius: 20px;
   --transition: 0.2s ease;
+  --token-keyword: #0369a1;
+  --token-directive: #0f766e;
+  --token-string: #b45309;
+  --token-number: #7c3aed;
+  --token-comment: #64748b;
   font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
@@ -33,6 +38,11 @@ body[data-theme='dark'] {
   --editor-bg-focus: rgba(15, 23, 42, 0.55);
   --card-bg: rgba(15, 23, 42, 0.55);
   --card-soft: rgba(15, 23, 42, 0.35);
+  --token-keyword: #38bdf8;
+  --token-directive: #5eead4;
+  --token-string: #facc15;
+  --token-number: #a855f7;
+  --token-comment: #94a3b8;
 }
 
 * {
@@ -119,10 +129,10 @@ a {
 
 .layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.5rem;
-  padding: 0 1.5rem 2rem;
-  max-width: 1200px;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 2rem;
+  padding: 0 2rem 3rem;
+  max-width: 1440px;
   margin: 0 auto;
 }
 
@@ -133,7 +143,7 @@ a {
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
-  min-height: 420px;
+  min-height: 560px;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
 }
 
@@ -145,6 +155,7 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .panel__footer {
@@ -164,23 +175,83 @@ a {
   letter-spacing: 0.04em;
 }
 
-textarea#mermaidInput {
-  flex: 1;
-  resize: none;
-  border: none;
-  background: var(--editor-bg);
-  color: var(--color-text);
-  padding: 1.25rem;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  font-family: "Fira Code", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
-  border-radius: 0;
-  transition: background var(--transition);
+.panel__actions--preview {
+  align-items: center;
+  gap: 0.75rem;
 }
 
-textarea#mermaidInput:focus {
-  outline: none;
+.editor {
+  position: relative;
+  flex: 1;
+  min-height: 560px;
+  background: var(--editor-bg);
+  border-radius: 0 0 var(--panel-radius) var(--panel-radius);
+  overflow: hidden;
+  font-family: "Fira Code", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+}
+
+.editor:focus-within {
   background: var(--editor-bg-focus);
+}
+
+.editor__highlight,
+textarea#mermaidInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: none;
+  resize: none;
+  font-size: 1rem;
+  line-height: 1.65;
+  font-family: inherit;
+  padding: 1.5rem 1.75rem;
+  box-sizing: border-box;
+}
+
+.editor__highlight {
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: var(--color-text);
+  background: transparent;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.editor__highlight .token-keyword {
+  color: var(--token-keyword);
+}
+
+.editor__highlight .token-directive {
+  color: var(--token-directive);
+}
+
+.editor__highlight .token-string {
+  color: var(--token-string);
+}
+
+.editor__highlight .token-number {
+  color: var(--token-number);
+}
+
+.editor__highlight .token-comment {
+  color: var(--token-comment);
+  font-style: italic;
+}
+
+textarea#mermaidInput {
+  background: transparent;
+  color: transparent;
+  caret-color: var(--color-text);
+  z-index: 1;
+  outline: none;
+  overflow: auto;
+}
+
+textarea#mermaidInput::selection {
+  background: rgba(14, 165, 233, 0.35);
 }
 
 #previewPanel {
@@ -190,20 +261,24 @@ textarea#mermaidInput:focus {
 
 #preview {
   flex: 1;
-  padding: 1.25rem;
+  padding: 1.75rem;
   overflow: auto;
+  min-height: 540px;
+  background: var(--card-soft);
 }
 
 #preview svg {
   width: 100%;
   height: auto;
+  max-height: none;
 }
 
 #errorBox {
   min-height: 2.4rem;
-  color: var(--color-danger);
-  padding: 0 1.25rem;
+  padding: 0 1.75rem;
+  margin-top: 0.5rem;
   font-size: 0.95rem;
+  color: var(--color-danger);
 }
 
 .theme-toggle {

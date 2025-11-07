@@ -6,7 +6,7 @@
 
 - 🚀 **开箱即用**：仓库自带 `public/vendor/mermaid.min.js`（当前为 v11.12.1），即使没有联网也能立即渲染。
 - 🧩 **示例丰富**：内置流程图、时序图、类图、状态机、ER 图、旅程图、甘特图、思维导图等常用模板。
-- 🛠️ **编辑体验**：支持快捷渲染（Ctrl/⌘ + Enter）、复制代码、SVG 导出、主题切换。
+- 🛠️ **编辑体验**：支持语法高亮、快捷渲染（Ctrl/⌘ + Enter）、复制代码、复制 PNG、导出 SVG/PNG、主题切换、宽屏双栏预览。
 - 🔍 **语法校验**：渲染前自动调用 `mermaid.parse`，第一时间暴露语法错误。
 
 ## 使用指南
@@ -40,13 +40,13 @@
    npm run start
    ```
 
-   访问终端输出的地址（默认 `http://localhost:4173`），或直接使用文件协议打开 `public/index.html`。
+   访问终端输出的地址（默认 `http://localhost:4173` 即可加载主页），或直接使用文件协议打开 `public/index.html`。
 
 3. **开始绘制**
 
    - 在左侧编辑器输入 Mermaid 代码，点击“渲染”或使用 `Ctrl/⌘ + Enter` 快捷键。
    - 如有语法问题，错误信息会显示在预览区域顶部。
-   - 支持一键复制、导出 SVG、切换浅色/深色主题。
+   - 支持语法高亮、一键复制代码、复制 PNG、导出 SVG/PNG，以及浅色/深色主题切换。
 
 ## 项目结构
 
@@ -76,14 +76,19 @@ graph TD
   A[用户浏览器] -->|打开| B[index.html]
   B --> C[assets/app.js]
   C --> D[Mermaid 渲染引擎<br/>public/vendor/mermaid.min.js (内置)]
+  C --> HL[编辑器语法高亮层<br/>highlightLayer]
+  C --> PX[PNG 导出助手<br/>svgToPngBlob]
   C --> E[assets/examples.js]
   C --> F[assets/styles.css]
+  HL --> Textarea[mermaidInput 输入]
+  PX --> Clipboard[Clipboard API]
+  PX --> Download[本地文件保存]
   D --> I[mermaid-meta.json]
   G[scripts/download-mermaid.cjs] --> D
   G --> I
   G --> J[scripts/lib/proxy.js]
   J --> K[代理环境变量<br/>HTTP CONNECT]
-  H[scripts/serve.cjs] --> A
+  H[scripts/serve.cjs] -->|http://localhost:4173| A
 ```
 
 ## 数据流图
@@ -96,9 +101,15 @@ flowchart LR
     Validate -->|失败| ErrorBox[错误提示]
     Render --> Preview[SVG 预览]
     Render --> SvgBlob[SVG 导出]
+    Render --> PngPipeline[SVG → PNG 转换]
     Examples[示例库选择] --> Input
     Theme[主题切换] --> Config[Mermaid 配置]
     Config --> Render
+    Input --> Highlight[语法高亮层]
+    Highlight --> Input
+    PngPipeline --> ClipboardPNG[复制 PNG]
+    PngPipeline --> PngDownload[下载 PNG]
+    CopyButton[复制代码] --> ClipboardText[剪贴板]
   end
   DownloadScript[download-mermaid.cjs] -->|GitHub Release 优先| Github[mermaid.min.js]
   DownloadScript -->|CDN 回退| CDN[jsDelivr / unpkg]
@@ -126,20 +137,38 @@ graph TD
   render[renderDiagram]
   copy[copyCode]
   download[downloadSvg]
+  copyPng[copyDiagramImage]
+  downloadPng[downloadPng]
   message[showTempMessage]
   applyTheme
+  updateHighlight
+  buildHighlight[buildHighlightedHtml]
+  svgToPng[svgToPngBlob]
+  parseSize[parseSvgDimensions]
+  syncScroll[syncScrollPosition]
 
   init --> render
   bind --> render
   bind --> copy
   bind --> download
+  bind --> copyPng
+  bind --> downloadPng
   bind --> loadExample
+  bind --> updateHighlight
+  bind --> syncScroll
   loadExample --> render
+  loadExample --> updateHighlight
   render --> message
   download --> message
   copy --> message
-  bind --> applyTheme
+  copyPng --> message
+  downloadPng --> message
+  updateHighlight --> buildHighlight
+  copyPng --> svgToPng
+  downloadPng --> svgToPng
+  svgToPng --> parseSize
   applyTheme --> render
+  mermaidInputScroll[textarea 滚动事件] --> syncScroll
 ```
 
 ## 用户视角用例
@@ -154,6 +183,8 @@ usecaseDiagram
     usecase UC4 as "复制当前代码"
     usecase UC5 as "导出 SVG 文件"
     usecase UC6 as "切换浅色/深色主题"
+    usecase UC7 as "复制渲染 PNG"
+    usecase UC8 as "下载 PNG 图像"
   }
   User --> UC1
   User --> UC2
@@ -161,6 +192,8 @@ usecaseDiagram
   User --> UC4
   User --> UC5
   User --> UC6
+  User --> UC7
+  User --> UC8
 ```
 
 ## 许可证
