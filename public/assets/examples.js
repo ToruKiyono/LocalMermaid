@@ -215,49 +215,37 @@ pie showData
     id: 'line-activation',
     name: '📈 Line Chart：活跃趋势',
     description: '双折线对比产品活跃与留存的趋势图。',
-    code: `%%{init: {'theme': 'forest'}}%%
-line
-    title 月度活跃与留存
-    x-axis 2024-Q1 到 2024-Q4
-    y-axis 指标 (% )
-    series 活跃率 [62, 68, 74, 81]
-    series 留存率 [54, 59, 63, 70]`
+    code: `%%{init: {'xyChart': {'plotColorPalette': '#38bdf8,#facc15'}}}%%
+xychart
+    title "月度活跃与留存"
+    x-axis ["2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4"]
+    y-axis "指标 (%)" 40 --> 90
+    line "活跃率" [62, 68, 74, 81]
+    line "留存率" [54, 59, 63, 70]`
   },
   {
     id: 'bar-conversion',
     name: '📊 Bar Chart：渠道转化率',
     description: '横向条形图对比不同渠道转化率，突出重点颜色。',
-    code: `%%{init: {'theme': 'neutral', 'themeVariables': {'barColor': '#38bdf8', 'barColor2': '#f97316'}}}%%
-bar
-    title Q2 渠道转化率
-    orientation horizontal
-    x-axis 转化率 (%)
-    y-axis 渠道
-    series 指标 [42, 35, 28, 24]
-    labels 广告投放, 社区运营, 邮件营销, 合作伙伴`
+    code: `%%{init: {'xyChart': {'plotColorPalette': '#38bdf8,#f97316'}}}%%
+xychart horizontal
+    title "Q2 渠道转化率"
+    x-axis ["广告投放", "社区运营", "邮件营销", "合作伙伴"]
+    y-axis "转化率 (%)" 0 --> 50
+    bar "渠道转化" [42, 35, 28, 24]`
   },
   {
     id: 'plot-xy',
     name: '📈 XY Chart：转化 vs 留存',
-    description: '散点 + 参考线组合，定位不同渠道在二维指标上的表现。',
-    code: `%%{init: {'theme': 'forest'}}%%
-plot
-    title 渠道表现对比
-    xLabel 转化率 (%)
-    yLabel 留存率 (%)
-    scatter 渠道得分 {
-      24: 58
-      32: 64
-      38: 70
-      45: 75
-      52: 83
-    }
-    line 目标基准 {
-      20: 50
-      30: 60
-      40: 70
-      50: 80
-    }`
+    description: '折线与柱状组合呈现渠道表现与目标对比。',
+    code: `%%{init: {'xyChart': {'plotColorPalette': '#38bdf8,#f97316,#22c55e'}}}%%
+xychart
+    title "渠道表现对比"
+    x-axis ["广告投放", "社区运营", "邮件营销", "合作伙伴", "增长实验"]
+    y-axis "指标 (%)" 0 --> 100
+    bar "转化率" [42, 35, 28, 24, 30]
+    line "留存率" [58, 64, 70, 75, 68]
+    line "满意度" [72, 78, 82, 84, 80]`
   },
   {
     id: 'mindmap-planning',
@@ -296,49 +284,49 @@ timeline
   {
     id: 'requirement-suite',
     name: '🔄 Requirement Diagram：需求追踪',
-    description: '需求、测试与组件之间的满足关系示意图。',
+    description: '需求、测试与实现之间的满足关系示意图。',
     code: `requirementDiagram
-    requirement R1 {
-      id: R-UI-001
-      text: 显示语法高亮
+    requirement UI_Highlight {
+      id: "R-UI-001"
+      text: "语法高亮清晰可读"
       risk: medium
       verifymethod: inspection
     }
-    requirement R2 {
-      id: R-PERF-002
-      text: 离线加载 < 1s
+    performanceRequirement Render_Perf {
+      id: "R-PERF-002"
+      text: "离线渲染耗时低于一秒"
       risk: high
       verifymethod: test
     }
-    testCase T1 {
-      id: TC-Highlight
-      text: 对示例进行渲染
+    element EditorSurface {
+      type: "UI 组件"
+      docRef: "docs/editor.md"
     }
-    component C1 {
-      id: EditorSurface
-      type: UI
+    element RenderBench {
+      type: "自动化测试"
+      docRef: "qa/render-benchmark"
     }
-    C1 - satisfies -> R1
-    C1 - verifies -> T1
-    T1 - verifies -> R2`
+    EditorSurface - satisfies -> UI_Highlight
+    RenderBench - verifies -> Render_Perf
+    UI_Highlight - traces -> Render_Perf`
   },
   {
     id: 'quadrant-priority',
     name: '🧭 Quadrant Chart：优先级矩阵',
     description: '高亮不同特性的价值与复杂度分布。',
     code: `quadrantChart
-    title 功能优先级评估
-    x-axis 价值
-    y-axis 复杂度
-    quadrant-1 快速获益
-    quadrant-2 长线投资
-    quadrant-3 观察跟进
-    quadrant-4 谨慎投入
-    "可视化导出" : [0.8, 0.4]
-    "多版本切换" : [0.7, 0.6]
-    "团队协作" : [0.6, 0.8]
+    title "Priority Quadrant"
+    x-axis Low Value --> High Value
+    y-axis Low Complexity --> High Complexity
+    quadrant-1 "快速获益"
+    quadrant-2 "长线投资"
+    quadrant-3 "观察跟进"
+    quadrant-4 "谨慎投入"
+    "可视化导出" : [0.82, 0.35]
+    "多版本切换" : [0.74, 0.58]
+    "团队协作" : [0.62, 0.82]
     "实时协同" : [0.9, 0.9]
-    "模板市场" : [0.5, 0.5]`
+    "模板市场" : [0.48, 0.52]`
   },
   {
     id: 'c4-architecture',
@@ -363,13 +351,13 @@ C4Container
     id: 'sankey-funnel',
     name: '📊 Sankey Diagram：漏斗流向',
     description: 'Sankey 图展示用户在不同阶段的能量流转。',
-    code: `%%{init: {'theme': 'forest'}}%%
-sankey-beta
-    流量入口[流量入口] 1200 访问页面
-    访问页面 760 注册账号
-    注册账号 540 激活成功
-    激活成功 310 付费订阅
-    注册账号 120 放弃试用
-    激活成功 90 继续试用`
+    code: `sankey
+
+Traffic_In,Landing_Page,1200
+Landing_Page,Signup,760
+Signup,Activation,540
+Activation,Subscribed,310
+Signup,Drop_Trial,120
+Activation,Extended_Trial,90`
   }
 ];
