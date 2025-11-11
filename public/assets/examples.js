@@ -1,40 +1,114 @@
 export const examples = [
   {
-    id: 'flowchart-basic',
-    name: '流程图：功能模块',
-    description: '最常见的流程图结构，展示应用的主要流程。',
-    code: `graph TD
-    A[访客进入网站] --> B{是否登录}
-    B -- 是 --> C[跳转到控制台]
-    B -- 否 --> D[显示登录引导]
-    C --> E[加载项目]
-    D --> F[展示注册入口]
-    E --> G[生成报表]
-    F -.-> C`
+    id: 'flowchart-growth',
+    name: '🧭 流程图：全链路增长实验',
+    description: '覆盖拉新、激活与转化的彩色流程图，展示不同路径的策略。',
+    code: `%%{init: {'theme': 'forest', 'themeVariables': { 'primaryColor': '#38bdf8', 'secondaryColor': '#fef3c7', 'tertiaryColor': '#dcfce7'}}}%%
+graph TD
+    classDef positive fill:#dcfce7,stroke:#16a34a,color:#065f46,font-weight:600;
+    classDef warning fill:#fee2e2,stroke:#fb7185,color:#b91c1c,font-weight:600;
+    A[访客进入着陆页] --> B{是否完成注册}
+    B -- 是 --> C[展示个性化仪表盘]
+    B -- 否 --> D[触发注册流程]
+    C --> E[激活邮件服务]
+    D -->|高意向| F[分配销售跟进]
+    D -->|继续培育| G[投放再营销广告]
+    E --> H[生成试用数据面板]
+    F --> I[销售成单]
+    G --> I
+    class C,E,H positive
+    class F,G warning`
   },
   {
-    id: 'sequence-api',
-    name: '时序图：API 调用',
-    description: '展示客户端、服务端之间的请求和响应链路。',
-    code: `sequenceDiagram
-    participant Client as Web 客户端
+    id: 'sequence-platform',
+    name: '🔁 Sequence Diagram：实时平台回流',
+    description: '展示缓存、服务与消息队列协作的彩色时序图。',
+    code: `%%{init: {'sequence': {'mirrorActors': false, 'actorFontWeight': 600}, 'themeVariables': {'primaryColor': '#bae6fd'}}}%%
+sequenceDiagram
+    autonumber
+    participant Client as 客户端
+    participant Edge as 边缘缓存
     participant API as 应用服务
+    participant MQ as 消息队列
     participant DB as 数据库
 
-    Client->>API: POST /login
-    API->>DB: 查询用户凭证
-    DB-->>API: 返回校验结果
-    alt 验证成功
-      API-->>Client: 返回 Token
-    else 验证失败
-      API-->>Client: 返回错误
-    end`
+    Client->>Edge: GET /reports
+    Edge-->>Client: 命中缓存?
+    alt 缓存命中
+      Edge-->>Client: 返回 200 + 缓存内容
+    else 缓存未命中
+      Edge->>API: 转发请求
+      API->>DB: 查询最新报表
+      DB-->>API: 返回数据
+      API->>MQ: 推送缓存刷新事件
+      API-->>Client: 返回 200 + 报表
+    end
+    MQ-->>Edge: 刷新缓存`
+  },
+  {
+    id: 'state-approval',
+    name: '🧱 State Diagram：变更审批流',
+    description: '通过粉色系状态图呈现多层审批与发布状态。',
+    code: `%%{init: {'themeVariables': {'primaryColor': '#f9a8d4', 'secondaryColor': '#fdf2f8', 'tertiaryColor': '#fce7f3'}}}%%
+stateDiagram-v2
+    [*] --> 草稿
+    草稿 --> 待评审: 提交审核
+    待评审 --> 评审中: 审核人领取
+    评审中 --> 变更中: 请求修改
+    变更中 --> 草稿: 作者更新
+    评审中 --> 已通过: 审核通过
+    已通过 --> 已归档: 发布时间到达
+    已归档 --> [*]
+    state 已通过 {
+      [*] --> 待发布
+      待发布 --> 已发布: 发布到生产
+    }`
+  },
+  {
+    id: 'journey-experience',
+    name: '🔄 User Journey：体验旅程',
+    description: '彩色旅程图对比不同角色在关键阶段的情绪评分。',
+    code: `%%{init: {'themeVariables': {'journeyTaskFill': '#bfdbfe', 'journeyTaskTextColor': '#0f172a', 'journeyStrokeColor': '#1d4ed8'}}}%%
+journey
+    title SaaS 客户生命周期
+    section 认知阶段
+      了解产品优势: 4: 市场团队
+      观看功能直播: 5: 客户成功
+    section 试用阶段
+      注册并导入数据: 3: 用户
+      邀请团队成员: 4: 用户
+    section 付费阶段
+      订阅专业版: 5: 财务
+      启用安全审计: 5: 安全管理员
+    section 成长期
+      评估业务指标: 4: 运营
+      参与共创计划: 5: 产品`
+  },
+  {
+    id: 'gantt-iteration',
+    name: '🧬 Gantt Chart：迭代规划',
+    description: '使用双色甘特图描述跨职能迭代排期。',
+    code: `%%{init: {'themeVariables': {'ganttBarColor': '#38bdf8', 'ganttBarColor2': '#f97316', 'ganttSectionBkgColor': '#f1f5f9'}}}%%
+gantt
+    title 2025 春季版本迭代
+    dateFormat  YYYY-MM-DD
+    section 规划与设计
+    竞品调研            :done,    a1, 2025-02-10, 5d
+    交互原型            :active,  a2, 2025-02-14, 6d
+    section 开发联调
+    API 重构            :         b1, after a2, 10d
+    Web 前端            :         b2, after a2, 12d
+    移动端适配          :         b3, after a2, 8d
+    section 测试与发布
+    灰度发布            :         c1, after b1, 5d
+    全量上线            :milestone,c2, 2025-03-18, 1d`
   },
   {
     id: 'class-domain',
-    name: '类图：领域建模',
-    description: '用于展示系统中实体、聚合与关系。',
-    code: `classDiagram
+    name: '🧩 Class Diagram：领域建模',
+    description: '强调聚合之间关系的领域类图，含彩色分类。',
+    code: `%%{init: {'themeVariables': {'primaryColor': '#a855f7', 'secondaryColor': '#ede9fe', 'tertiaryColor': '#f5f3ff'}}}%%
+classDiagram
     class 用户 {
       +UUID id
       +string name
@@ -54,34 +128,28 @@ export const examples = [
       +Decimal price
       +int stock
     }
-
+    class 优惠券 {
+      +UUID id
+      +string code
+      +Decimal discount
+      +apply()
+    }
     用户 "1" -- "*" 订单 : 创建
     订单 "1" -- "*" 商品 : 包含
+    订单 o--o 优惠券 : 使用
     商品 --> 订单 : 更新库存`
   },
   {
-    id: 'state-machine',
-    name: '状态图：审批流程',
-    description: '展示审批流程的状态变化以及触发条件。',
-    code: `stateDiagram-v2
-    [*] --> 待提交
-    待提交 --> 待审批: 提交申请
-    待审批 --> 审批中: 分派审批人
-    审批中 --> 通过: 审批通过
-    审批中 --> 驳回: 审批驳回
-    驳回 --> 待提交: 修改后重新提交
-    通过 --> [*]`
-  },
-  {
-    id: 'er-model',
-    name: 'ER 图：用户与订单',
-    description: '实体关系图适合快速梳理数据库表之间的关联。',
-    code: `erDiagram
+    id: 'er-commerce',
+    name: '🕸️ Entity Relationship Diagram：电商模型',
+    description: '实体关系图展示用户、订单、结算的多彩关系网络。',
+    code: `%%{init: {'themeVariables': {'erTableHeaderColor': '#0ea5e9', 'erTableHeaderTextColor': '#ffffff', 'erTableBackgroundColor': '#ecfeff'}}}%%
+erDiagram
     USERS ||--o{ ORDERS : 拥有
     USERS {
       string id PK
       string email
-      string name
+      string region
     }
     ORDERS {
       string id PK
@@ -91,55 +159,110 @@ export const examples = [
     }
     ORDERS ||--|{ ORDER_ITEMS : 包含
     PRODUCTS ||--o{ ORDER_ITEMS : 被购买
+    PAYMENTS ||--|| ORDERS : 结算
     PRODUCTS {
       string id PK
       string title
       decimal price
+      string sku
     }
     ORDER_ITEMS {
       string id PK
       string order_id FK
       string product_id FK
       int quantity
+    }
+    PAYMENTS {
+      string id PK
+      string channel
+      string status
     }`
   },
   {
-    id: 'journey-map',
-    name: '旅程图：用户生命周期',
-    description: '旅程图用于分析用户在各阶段的体验与情绪。',
-    code: `journey
-    title 用户生命周期体验
-    section 认知阶段
-      看到广告: 5: 营销团队
-      阅读博客: 4: 内容团队
-    section 转化阶段
-      注册账号: 3: 用户
-      体验试用: 4: 产品
-    section 留存阶段
-      成为付费用户: 5: 运营
-      邀请同事: 4: 用户`
+    id: 'git-graph-release',
+    name: '🔗 Git Graph：版本发布',
+    description: '以 Git Graph 展示彩色分支、合并与版本标签。',
+    code: `%%{init: {'gitGraph': {'showCommitLabel': true, 'mainBranchName': 'main', 'rotateCommitLabel': false}, 'themeVariables': {'primaryColor': '#38bdf8'}}}%%
+gitGraph
+    commit id: "初始化"
+    branch feature/api
+    commit id: "API 草稿"
+    branch feature/ui
+    commit id: "UI 原型"
+    checkout feature/api
+    commit id: "接入鉴权"
+    checkout main
+    merge feature/api tag: "v0.5.0"
+    checkout feature/ui
+    commit id: "引入主题切换"
+    checkout main
+    merge feature/ui tag: "v1.0.0"
+    commit id: "部署上线"`
   },
   {
-    id: 'gantt-sprint',
-    name: '甘特图：迭代计划',
-    description: '规划迭代阶段和任务进度的可视化方案。',
-    code: `gantt
-    title Q2 迭代计划
-    dateFormat  YYYY-MM-DD
-    section 规划
-    需求调研        :done,    des1, 2025-04-01,2025-04-05
-    原型设计        :active,  des2, 2025-04-04, 5d
-    section 开发
-    后端接口        :         des3, after des2, 8d
-    前端页面        :         des4, after des2, 9d
-    section 测试与发布
-    联调测试        :         des5, after des3, 6d
-    上线准备        :milestone, des6, 2025-05-01, 1d`
+    id: 'pie-channel',
+    name: '🌍 Pie Chart：渠道构成',
+    description: '展示多渠道转化贡献的多彩饼图。',
+    code: `%%{init: {'themeVariables': {'pie1': '#38bdf8', 'pie2': '#f472b6', 'pie3': '#facc15', 'pie4': '#34d399'}}}%%
+pie showData
+    title 2024 年渠道贡献
+    "付费推广" : 32
+    "内容营销" : 24
+    "合作伙伴" : 18
+    "口碑推荐" : 26`
+  },
+  {
+    id: 'line-activation',
+    name: '📈 Line Chart：活跃趋势',
+    description: '双折线对比产品活跃与留存的趋势图。',
+    code: `%%{init: {'theme': 'forest'}}%%
+line
+    title 月度活跃与留存
+    x-axis 2024-Q1 到 2024-Q4
+    y-axis 指标 (% )
+    series 活跃率 [62, 68, 74, 81]
+    series 留存率 [54, 59, 63, 70]`
+  },
+  {
+    id: 'bar-conversion',
+    name: '📊 Bar Chart：渠道转化率',
+    description: '横向条形图对比不同渠道转化率，突出重点颜色。',
+    code: `%%{init: {'theme': 'neutral', 'themeVariables': {'barColor': '#38bdf8', 'barColor2': '#f97316'}}}%%
+bar
+    title Q2 渠道转化率
+    orientation horizontal
+    x-axis 转化率 (%)
+    y-axis 渠道
+    series 指标 [42, 35, 28, 24]
+    labels 广告投放, 社区运营, 邮件营销, 合作伙伴`
+  },
+  {
+    id: 'plot-xy',
+    name: '📈 XY Chart：转化 vs 留存',
+    description: '散点 + 参考线组合，定位不同渠道在二维指标上的表现。',
+    code: `%%{init: {'theme': 'forest'}}%%
+plot
+    title 渠道表现对比
+    xLabel 转化率 (%)
+    yLabel 留存率 (%)
+    scatter 渠道得分 {
+      24: 58
+      32: 64
+      38: 70
+      45: 75
+      52: 83
+    }
+    line 目标基准 {
+      20: 50
+      30: 60
+      40: 70
+      50: 80
+    }`
   },
   {
     id: 'mindmap-planning',
-    name: '思维导图：项目规划',
-    description: '思维导图示例，快速梳理项目关键节点。',
+    name: '🧠 Mindmap：项目规划',
+    description: '绿色思维导图拆解目标、关键结果与策略。',
     code: `mindmap
       root((项目启动))
         目标
@@ -155,5 +278,98 @@ export const examples = [
           精准运营
             增加触达渠道
             自动化运营流程`
+  },
+  {
+    id: 'timeline-rollout',
+    name: '🗂️ Timeline：发布计划',
+    description: '时间线梳理彩色的版本发布与关键活动节点。',
+    code: `%%{init: {'themeVariables': {'timelineSectionBkgColor': '#f1f5f9', 'timelineSectionHeaderColor': '#38bdf8'}}}%%
+timeline
+    title LocalMermaid 发布节奏
+    2025-01-08 : 梳理需求与原型
+    2025-01-22 : 样式与交互定稿
+    2025-02-05 : 加入版本切换
+    2025-02-19 : 扩展图表示例库
+    2025-03-05 : 支持导出 PNG
+    2025-03-19 : 发布离线安装包`
+  },
+  {
+    id: 'requirement-suite',
+    name: '🔄 Requirement Diagram：需求追踪',
+    description: '需求、测试与组件之间的满足关系示意图。',
+    code: `requirementDiagram
+    requirement R1 {
+      id: R-UI-001
+      text: 显示语法高亮
+      risk: medium
+      verifymethod: inspection
+    }
+    requirement R2 {
+      id: R-PERF-002
+      text: 离线加载 < 1s
+      risk: high
+      verifymethod: test
+    }
+    testCase T1 {
+      id: TC-Highlight
+      text: 对示例进行渲染
+    }
+    component C1 {
+      id: EditorSurface
+      type: UI
+    }
+    C1 - satisfies -> R1
+    C1 - verifies -> T1
+    T1 - verifies -> R2`
+  },
+  {
+    id: 'quadrant-priority',
+    name: '🧭 Quadrant Chart：优先级矩阵',
+    description: '高亮不同特性的价值与复杂度分布。',
+    code: `quadrantChart
+    title 功能优先级评估
+    x-axis 价值
+    y-axis 复杂度
+    quadrant-1 快速获益
+    quadrant-2 长线投资
+    quadrant-3 观察跟进
+    quadrant-4 谨慎投入
+    "可视化导出" : [0.8, 0.4]
+    "多版本切换" : [0.7, 0.6]
+    "团队协作" : [0.6, 0.8]
+    "实时协同" : [0.9, 0.9]
+    "模板市场" : [0.5, 0.5]`
+  },
+  {
+    id: 'c4-architecture',
+    name: '⚙️ C4 Diagram：系统容器视图',
+    description: 'C4 容器图突出前端、API 与存储之间的数据流。',
+    code: `%%{init: {'theme': 'forest'}}%%
+C4Container
+    title LocalMermaid 架构
+    Person(user, "终端用户", "在浏览器中编辑 Mermaid")
+    Person(admin, "管理员", "维护示例与版本")
+    System_Boundary(saas, "LocalMermaid") {
+      Container(web, "Web 前端", "HTML + JS", "渲染编辑器与预览")
+      Container(api, "API 服务", "Node.js", "提供示例与版本管理 API")
+      ContainerDb(db, "存储", "SQLite", "持久化示例模板")
+    }
+    Rel(user, web, "编辑与渲染图表", "HTTPS")
+    Rel(admin, web, "上传示例", "HTTPS")
+    Rel(web, api, "拉取示例数据", "HTTPS")
+    Rel(api, db, "读写配置", "SQL")`
+  },
+  {
+    id: 'sankey-funnel',
+    name: '📊 Sankey Diagram：漏斗流向',
+    description: 'Sankey 图展示用户在不同阶段的能量流转。',
+    code: `%%{init: {'theme': 'forest'}}%%
+sankey-beta
+    流量入口[流量入口] 1200 访问页面
+    访问页面 760 注册账号
+    注册账号 540 激活成功
+    激活成功 310 付费订阅
+    注册账号 120 放弃试用
+    激活成功 90 继续试用`
   }
 ];

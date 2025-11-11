@@ -11,6 +11,8 @@ const { getProxyForUrl, createHttpProxyAgent } = require('./lib/proxy');
 const DEST_DIR = path.resolve(__dirname, '../public/vendor');
 const DEST_FILE = path.join(DEST_DIR, 'mermaid.min.js');
 const META_FILE = path.join(DEST_DIR, 'mermaid-meta.json');
+const DEFAULT_PACKAGE_ID = 'bundled-primary';
+const SCRIPT_PATH = 'vendor/mermaid.min.js';
 const VERSION_ENDPOINT = 'https://registry.npmjs.org/mermaid/latest';
 const SOURCES = [
   {
@@ -37,20 +39,19 @@ async function main() {
 
     const version = latest.version;
     const { sourceName, downloadUrl } = await downloadWithFallback(version);
-    fs.writeFileSync(
-      META_FILE,
-      JSON.stringify(
-        {
-          version,
-          downloadedAt: new Date().toISOString(),
-          downloadUrl,
-          source: sourceName
-        },
-        null,
-        2
-      ),
-      'utf8'
-    );
+    const meta = normalizeMeta(readExistingMeta());
+    const entry = {
+      id: DEFAULT_PACKAGE_ID,
+      label: `Mermaid v${version}（内置）`,
+      version,
+      scriptPath: SCRIPT_PATH,
+      source: sourceName,
+      downloadUrl,
+      downloadedAt: new Date().toISOString()
+    };
+    meta.defaultVersion = entry.id;
+    meta.packages = upsertPackage(meta.packages, entry);
+    writeMeta(meta);
     console.log(`下载完成，文件已保存到 ${DEST_FILE}（来源：${sourceName}）`);
   } catch (error) {
     console.error('下载失败：', formatError(error));
@@ -196,6 +197,78 @@ function buildAgent(targetUrl) {
     console.warn('代理不可用或协议不受支持，改为直接发起请求。');
   }
   return agent;
+}
+
+function readExistingMeta() {
+  if (!fs.existsSync(META_FILE)) {
+    return null;
+  }
+  try {
+    const content = fs.readFileSync(META_FILE, 'utf8');
+    return JSON.parse(content);
+  } catch (error) {
+    console.warn('读取现有 mermaid-meta.json 失败，将覆盖写入新文件。', error);
+    return null;
+  }
+}
+
+function normalizeMeta(raw) {
+  if (!raw) {
+    return { defaultVersion: DEFAULT_PACKAGE_ID, packages: [] };
+  }
+
+  if (Array.isArray(raw.packages)) {
+    return {
+      defaultVersion: raw.defaultVersion || DEFAULT_PACKAGE_ID,
+      packages: raw.packages.map((item, index) => ({
+        id: item.id || item.version || `package-${index + 1}`,
+        label: item.label || `Mermaid ${item.version || item.id || index + 1}`,
+        version: item.version || '',
+        scriptPath: item.scriptPath || item.path || SCRIPT_PATH,
+        source: item.source || raw.source || 'bundled',
+        downloadUrl: item.downloadUrl || raw.downloadUrl || null,
+        downloadedAt: item.downloadedAt || raw.downloadedAt || null,
+        checksum: item.checksum || null,
+        cacheKey: item.cacheKey || null
+      }))
+    };
+  }
+
+  if (raw.version) {
+    return {
+      defaultVersion: DEFAULT_PACKAGE_ID,
+      packages: [
+        {
+          id: DEFAULT_PACKAGE_ID,
+          label: `Mermaid v${raw.version}（内置）`,
+          version: raw.version,
+          scriptPath: SCRIPT_PATH,
+          source: raw.source || 'bundled',
+          downloadUrl: raw.downloadUrl || null,
+          downloadedAt: raw.downloadedAt || null,
+          checksum: raw.checksum || null,
+          cacheKey: raw.cacheKey || raw.version || null
+        }
+      ]
+    };
+  }
+
+  return { defaultVersion: DEFAULT_PACKAGE_ID, packages: [] };
+}
+
+function upsertPackage(list, entry) {
+  const packages = Array.isArray(list) ? [...list] : [];
+  const index = packages.findIndex((pkg) => pkg.id === entry.id || pkg.scriptPath === entry.scriptPath);
+  if (index >= 0) {
+    packages[index] = { ...packages[index], ...entry };
+  } else {
+    packages.push(entry);
+  }
+  return packages;
+}
+
+function writeMeta(meta) {
+  fs.writeFileSync(META_FILE, JSON.stringify(meta, null, 2), 'utf8');
 }
 
 function formatError(error) {
