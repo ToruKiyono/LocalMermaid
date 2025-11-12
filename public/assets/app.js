@@ -1024,15 +1024,55 @@ function parseDimension(raw) {
   return Number.isFinite(value) ? value : Number.NaN;
 }
 
+function sanitizeSvgForCanvas(svgString) {
+  if (!svgString) {
+    return svgString;
+  }
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgString, 'image/svg+xml');
+    const parseError = doc.querySelector('parsererror');
+    if (parseError) {
+      throw new Error(parseError.textContent || 'Invalid SVG');
+    }
+
+    const svgElement = doc.documentElement;
+    const styles = svgElement.querySelectorAll('style');
+    styles.forEach((styleEl) => {
+      const original = styleEl.textContent || '';
+      let cleaned = original.replace(/@import[^;]+;?/gi, '');
+      cleaned = cleaned.replace(/url\((['"]?)(https?:)?\/\/[^)]+\)/gi, 'none');
+      if (cleaned !== original) {
+        styleEl.textContent = cleaned;
+      }
+    });
+
+    Array.from(svgElement.querySelectorAll('image, use')).forEach((node) => {
+      const href = node.getAttribute('href') || node.getAttribute('xlink:href');
+      if (href && /^https?:\/\//i.test(href)) {
+        node.remove();
+      }
+    });
+
+    return new XMLSerializer().serializeToString(svgElement);
+  } catch (error) {
+    console.warn('SVG 清理失败，将使用原始内容。', error);
+    return svgString;
+  }
+}
+
 function svgToPngBlob(svgString) {
-  const { width, height } = parseSvgDimensions(svgString);
+  const safeSvg = sanitizeSvgForCanvas(svgString);
+  const { width, height } = parseSvgDimensions(safeSvg);
   const scaleFactor = Math.min(3, Math.max(1, 2048 / Math.max(width, height)));
 
   return new Promise((resolve, reject) => {
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const svgBlob = new Blob([safeSvg], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(svgBlob);
     const image = new Image();
     image.decoding = 'async';
+    image.crossOrigin = 'anonymous';
     image.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(width * scaleFactor));

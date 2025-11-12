@@ -7,16 +7,16 @@
 - 🚀 **开箱即用**：仓库自带 `public/vendor/mermaid.min.js`（当前为 v11.12.1）与版本清单，完全离线即可渲染。
 - 🔁 **多版本切换**：读取 `mermaid-meta.json` 中的版本列表，前端可即时切换 Mermaid 内核并刷新当前图表。
 - 🛠️ **编辑体验**：提供语法高亮、行号/行数统计、实时光标行列定位、快捷渲染（Ctrl/⌘ + Enter）、更宽广的编辑面板以及示例库一键载入。
-- 🖱️ **预览增强**：渲染结果面板支持缩放、平移、居中复位，并可复制 PNG、导出 SVG/PNG。
+- 🖱️ **预览增强**：渲染结果面板支持缩放、平移、居中复位，默认将图表顶部居中展示，并可复制 PNG、导出 SVG/PNG。
 - 🔍 **语法校验**：渲染前自动调用 `mermaid.parse`，第一时间暴露语法错误并提示定位。
 - 🎨 **示例图库**：涵盖流程、时序、状态、旅程、甘特、类图、ER、Git Graph、饼图、折线/柱状/XY 图、思维导图、时间线、需求图、象限图、C4、桑基图等 16+ 彩色案例，全部通过 v11.12.1 语法校验。
 
 ## 本次更新亮点
 
-- 🖼️ 修复渲染结果面板出现空白的问题：新增 SVG 构建器，通过 `DOMParser` 导入渲染结果，保持在线预览与导出图像的一致性。
-- 🧮 预览画布会根据 Mermaid 输出的 SVG 尺寸自动撑开，同步修正平移/缩放与下载尺寸，彻底解决“下载正常但页面空白”的问题。
-- 🧭 预览容器改为弹性居中布局并与平移/缩放逻辑联动，确保图表默认居中显示且始终可拖拽查看。
-- 📚 同步更新系统架构图、数据流图、调用图与用例描述，反映 SVG 构建流程及渲染链路的最新实现。
+- 🛡️ 复制 PNG / 下载 PNG 前新增 SVG 清理器，自动剔除外链资源并使用匿名解码，彻底解决浏览器因“画布被污染”导致的导出报错。
+- 🎯 调整预览容器的对齐方式与内边距，图表默认顶部水平居中展示，同时保留平移缩放能力，让可视区域更紧凑不再大面积留白。
+- 🧾 收紧编辑器的行距与留白，光标对齐和滚动高度同步保持准确，大段粘贴时底部不再出现大片空白。
+- 📚 同步更新系统架构图、数据流图、调用图与用例描述，记录 SVG 清理与版面优化带来的最新流程。
 
 ## 使用指南
 
@@ -132,7 +132,7 @@ graph TD
   OverlaySync --> HighlightLayer
   OverlaySync --> Gutter[lineNumberGutter]
   CursorIndicator --> FooterMetrics[底部指标<br/>panel__footer]
-  App --> PanZoom[缩放/平移控制<br/>previewViewport]
+  App --> PanZoom[预览布局 & 平移缩放<br/>previewViewport]
   App --> Examples[assets/examples.js<br/>示例集]
   Examples --> SyntaxAudit[语法校验（11.12.1）]
   SyntaxAudit --> Gallery[16 类示例<br/>flowchart/xychart/C4...]
@@ -142,9 +142,10 @@ graph TD
   SvgBuilder --> PreviewSizer[SVG 尺寸同步<br/>syncPreviewCanvasSize]
   PreviewSizer --> Preview[预览画布<br/>preview]
   PanZoom --> Preview
+  SvgBuilder --> CanvasSanitizer[SVG 清理器<br/>sanitizeSvgForCanvas]
   HighlightLayer --> Editor[编辑器 textarea]
   PreviewSizer --> Exporters[导出与复制模块]
-  SvgBuilder --> Exporters
+  CanvasSanitizer --> Exporters
   Exporters --> Clipboard[Clipboard API]
   Exporters --> FileSave[本地文件保存]
   Scripts[Node.js 脚本] --> Downloader[scripts/download-mermaid.cjs]
@@ -177,7 +178,9 @@ flowchart LR
     Preview --> PanZoom[缩放/平移状态]
     PanZoom --> Preview
     SvgBuilderDF --> SvgExport[导出 SVG]
-    PreviewSizerDF --> PngPipeline[SVG → PNG]
+    SvgBuilderDF --> CanvasSanitizerDF[SVG 清理器]
+    CanvasSanitizerDF --> PngPipeline[SVG → PNG]
+    PreviewSizerDF --> PngPipeline
     Examples[示例库选择] --> ExampleValidator[示例语法校验 (11.12.1)]
     ExampleValidator --> EditorInput
     Examples --> GalleryBoard[图表示例卡片]
@@ -249,6 +252,7 @@ graph TD
   overlaySync --> surfaceHeight[getEditorSurfaceHeight]
   copyPng --> svgToPng[svgToPngBlob]
   downloadPng --> svgToPng
+  svgToPng --> sanitizeSvg[sanitizeSvgForCanvas]
   svgToPng --> parseSize[parseSvgDimensions]
   parseSize --> sizeCalc
   showMessage[showTempMessage] --> setStatus
