@@ -464,8 +464,16 @@ function renderDiagram() {
       if (token !== renderToken) {
         return;
       }
-      preview.innerHTML = svg;
-      currentSvg = svg;
+      let svgElement;
+      try {
+        svgElement = buildSvgElement(svg);
+      } catch (error) {
+        console.error('无法解析渲染结果：', error);
+        setStatusMessage('渲染结果解析失败，请重试。', 'error');
+        return;
+      }
+      preview.replaceChildren(svgElement);
+      currentSvg = new XMLSerializer().serializeToString(svgElement);
       if (typeof bindFunctions === 'function') {
         bindFunctions(preview);
       }
@@ -474,6 +482,30 @@ function renderDiagram() {
     .catch((renderError) => {
       setStatusMessage(renderError.message || '渲染失败，请检查输入内容。', 'error');
     });
+}
+
+function buildSvgElement(svgString) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, 'image/svg+xml');
+  const parseError = doc.querySelector('parsererror');
+  if (parseError) {
+    throw new Error(parseError.textContent || '无法解析生成的 SVG 文本。');
+  }
+
+  const svgNode = doc.documentElement;
+  if (!svgNode || svgNode.nodeName.toLowerCase() !== 'svg') {
+    throw new Error('渲染结果不是有效的 SVG 元素。');
+  }
+
+  const svgElement = document.importNode(svgNode, true);
+  if (!svgElement.getAttribute('preserveAspectRatio')) {
+    svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  }
+  svgElement.style.display = 'block';
+  svgElement.style.maxWidth = '100%';
+  svgElement.style.maxHeight = '100%';
+  svgElement.style.pointerEvents = 'auto';
+  return svgElement;
 }
 
 function copyCode() {

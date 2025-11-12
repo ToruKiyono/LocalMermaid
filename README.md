@@ -13,10 +13,9 @@
 
 ## 本次更新亮点
 
-- ✅ 修复 XY/柱状/象限/需求/桑基示例的语法兼容性，确保所有内置案例都能在 v11.12.1 下即时渲染。
-- 📏 扩大编辑区与预览区尺寸，长图编写时不再拥挤，同时修复语法高亮遮挡导致的「行数多时看不到尾部代码」问题。
-- 🧭 新增光标行列展示与滚动同步逻辑，长文档编辑时能够迅速定位当前所在位置。
-- 🗂️ 扩展示例库，覆盖用户反馈中提到的流程、旅程、C4、桑基、XY/折线/柱状等 16 类典型图表并使用醒目配色。
+- 🖼️ 修复渲染结果面板出现空白的问题：新增 SVG 构建器，通过 `DOMParser` 导入渲染结果，保持在线预览与导出图像的一致性。
+- 🧭 预览容器改为弹性居中布局并与平移/缩放逻辑联动，确保图表默认居中显示且始终可拖拽查看。
+- 📚 同步更新系统架构图、数据流图、调用图与用例描述，反映 SVG 构建流程及渲染链路的最新实现。
 
 ## 使用指南
 
@@ -138,10 +137,11 @@ graph TD
   SyntaxAudit --> Gallery[16 类示例<br/>flowchart/xychart/C4...]
   App --> Styles[assets/styles.css]
   Mermaid --> RenderPipeline[渲染流程<br/>mermaid.render]
-  RenderPipeline --> Preview[预览画布<br/>preview]
+  RenderPipeline --> SvgBuilder[SVG 构建器<br/>buildSvgElement]
+  SvgBuilder --> Preview[预览画布<br/>preview]
   PanZoom --> Preview
   HighlightLayer --> Editor[编辑器 textarea]
-  RenderPipeline --> Exporters[导出与复制模块]
+  SvgBuilder --> Exporters[导出与复制模块]
   Exporters --> Clipboard[Clipboard API]
   Exporters --> FileSave[本地文件保存]
   Scripts[Node.js 脚本] --> Downloader[scripts/download-mermaid.cjs]
@@ -168,11 +168,12 @@ flowchart LR
     EditorInput --> Validate[mermaid.parse 校验]
     Validate -->|成功| Render
     Validate -->|失败| ErrorBox
-    Render --> Preview[SVG 预览画布]
+    Render --> SvgBuilderDF[SVG 构建器]
+    SvgBuilderDF --> Preview[SVG 预览画布]
     Preview --> PanZoom[缩放/平移状态]
     PanZoom --> Preview
-    Render --> SvgExport[导出 SVG]
-    Render --> PngPipeline[SVG → PNG]
+    SvgBuilderDF --> SvgExport[导出 SVG]
+    SvgBuilderDF --> PngPipeline[SVG → PNG]
     Examples[示例库选择] --> ExampleValidator[示例语法校验 (11.12.1)]
     ExampleValidator --> EditorInput
     Examples --> GalleryBoard[图表示例卡片]
@@ -221,8 +222,11 @@ graph TD
   activate --> initialize[initializeMermaid]
   activate --> render
   initialize --> updateVersionLabel
+  render --> svgBuilder[buildSvgElement]
   render --> resetView
   render --> setStatus[setStatusMessage]
+  svgBuilder --> domParser[DOMParser.parseFromString]
+  svgBuilder --> xmlSerializer[XMLSerializer]
   resetView --> applyPanZoom
   zoom[zoomBy] --> applyPanZoom
   applyTheme --> render

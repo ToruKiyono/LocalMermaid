@@ -324,8 +324,9 @@ textarea#mermaidInput::selection {
   background: var(--card-soft);
   position: relative;
   overflow: hidden;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: grab;
   touch-action: none;
 }
@@ -339,7 +340,9 @@ textarea#mermaidInput::selection {
   transform-origin: center center;
   transition: transform 0.12s ease-out;
   will-change: transform;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
   min-height: 0;
 }
