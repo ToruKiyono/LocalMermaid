@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Mermaid Studio</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script type="module" src="assets/app.js" defer></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__content">
+      <h1>Local Mermaid Studio</h1>
+      <p>在完全离线的环境下编写、渲染并调试 Mermaid 图表。</p>
+      <div class="hero__actions">
+        <a class="btn" href="#editor">开始绘制</a>
+        <a class="btn btn--ghost" href="#examples">查看示例</a>
+      </div>
+    </div>
+  </header>
+  <main class="layout">
+    <section class="panel panel--editor" id="editor">
+      <div class="panel__header">
+        <h2>Mermaid 编辑器</h2>
+        <div class="panel__actions">
+          <button type="button" id="renderButton" class="btn btn--small">渲染 (Ctrl + Enter)</button>
+          <button type="button" id="copyButton" class="btn btn--small btn--ghost">复制代码</button>
+          <button type="button" id="downloadButton" class="btn btn--small btn--ghost">导出 SVG</button>
+        </div>
+      </div>
+      <div class="editor" data-editor>
+        <div class="editor__gutter" id="lineNumberGutter" aria-hidden="true"></div>
+        <div class="editor__surface">
+          <pre id="highlightLayer" class="editor__highlight" aria-hidden="true"></pre>
+          <textarea
+            id="mermaidInput"
+            spellcheck="false"
+            placeholder="在这里输入 Mermaid 代码..."
+            aria-label="Mermaid 编辑器"
+          ></textarea>
+        </div>
+      </div>
+      <div class="panel__footer">
+        <label for="exampleSelect">快速载入示例：</label>
+        <select id="exampleSelect"></select>
+        <span id="cursorPositionLabel" class="line-count line-count--cursor">光标：第 1 行，第 1 列</span>
+        <span id="lineCountLabel" class="line-count">行数：1</span>
+      </div>
+    </section>
+    <section class="panel panel--preview" id="previewPanel">
+      <div class="panel__header">
+        <h2>渲染结果</h2>
+        <div class="panel__actions panel__actions--preview">
+          <button type="button" id="copyDiagramButton" class="btn btn--small btn--ghost">复制 PNG</button>
+          <button type="button" id="downloadPngButton" class="btn btn--small btn--ghost">下载 PNG</button>
+          <div class="zoom-controls" role="group" aria-label="缩放控制">
+            <button type="button" id="zoomOutButton" class="btn btn--small btn--ghost" aria-label="缩小">-</button>
+            <span id="zoomDisplay" class="zoom-display" aria-live="polite">100%</span>
+            <button type="button" id="zoomInButton" class="btn btn--small btn--ghost" aria-label="放大">+</button>
+            <button type="button" id="resetViewButton" class="btn btn--small btn--ghost">重置视图</button>
+          </div>
+          <div class="version-select">
+            <label for="versionSelect">Mermaid 版本</label>
+            <select id="versionSelect" aria-label="选择 Mermaid 版本"></select>
+          </div>
+          <div class="theme-toggle">
+            <label class="switch">
+              <input type="checkbox" id="themeToggle" />
+              <span class="slider"></span>
+            </label>
+            <span id="themeLabel">浅色主题</span>
+          </div>
+        </div>
+      </div>
+      <div id="errorBox" role="alert"></div>
+      <div id="previewViewport" class="preview-viewport" aria-live="polite">
+        <div id="preview" class="preview-canvas"></div>
+      </div>
+    </section>
+  </main>
+  <section class="examples" id="examples">
+    <h2>内置示例</h2>
+    <div class="examples__grid" id="examplesGrid"></div>
+  </section>
+  <footer class="footer">
+    <p>Mermaid 最新版本离线体验站 · <span id="versionLabel">版本：未知</span></p>
+  </footer>
+</body>
+</html>
