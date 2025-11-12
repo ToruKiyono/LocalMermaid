@@ -16,7 +16,8 @@
 - 🛡️ 复制 PNG / 下载 PNG 前新增 SVG 清理器，自动剔除外链资源并使用匿名解码，彻底解决浏览器因“画布被污染”导致的导出报错。
 - 🎯 调整预览容器的对齐方式与内边距，图表默认顶部水平居中展示，同时保留平移缩放能力，让可视区域更紧凑不再大面积留白。
 - 🧾 收紧编辑器的行距与留白，光标对齐和滚动高度同步保持准确，大段粘贴时底部不再出现大片空白。
-- 📚 同步更新系统架构图、数据流图、调用图与用例描述，记录 SVG 清理与版面优化带来的最新流程。
+- 🧯 修复 C4 示例在浏览器端渲染时报出的 `xmlns:xlink` 缺失问题，所有示例与导出流程都会自动补全必要命名空间。
+- 📚 同步更新系统架构图、数据流图、调用图与用例描述，记录 SVG 清理、命名空间补全与版面优化的最新流程。
 
 ## 使用指南
 
@@ -139,13 +140,15 @@ graph TD
   App --> Styles[assets/styles.css]
   Mermaid --> RenderPipeline[渲染流程<br/>mermaid.render]
   RenderPipeline --> SvgBuilder[SVG 构建器<br/>buildSvgElement]
-  SvgBuilder --> PreviewSizer[SVG 尺寸同步<br/>syncPreviewCanvasSize]
+  SvgBuilder --> NamespaceGuard[命名空间补全<br/>ensureSvgNamespaces]
+  NamespaceGuard --> PreviewSizer[SVG 尺寸同步<br/>syncPreviewCanvasSize]
   PreviewSizer --> Preview[预览画布<br/>preview]
   PanZoom --> Preview
   SvgBuilder --> CanvasSanitizer[SVG 清理器<br/>sanitizeSvgForCanvas]
+  CanvasSanitizer --> NamespaceGuard
   HighlightLayer --> Editor[编辑器 textarea]
   PreviewSizer --> Exporters[导出与复制模块]
-  CanvasSanitizer --> Exporters
+  NamespaceGuard --> Exporters
   Exporters --> Clipboard[Clipboard API]
   Exporters --> FileSave[本地文件保存]
   Scripts[Node.js 脚本] --> Downloader[scripts/download-mermaid.cjs]
@@ -173,15 +176,17 @@ flowchart LR
     Validate -->|成功| Render
     Validate -->|失败| ErrorBox
     Render --> SvgBuilderDF[SVG 构建器]
-    SvgBuilderDF --> PreviewSizerDF[SVG 尺寸同步]
+    SvgBuilderDF --> NamespaceGuardDF[命名空间补全]
+    NamespaceGuardDF --> PreviewSizerDF[SVG 尺寸同步]
     PreviewSizerDF --> Preview[SVG 预览画布]
     Preview --> PanZoom[缩放/平移状态]
     PanZoom --> Preview
-    SvgBuilderDF --> SvgExport[导出 SVG]
+    NamespaceGuardDF --> SvgExport[导出 SVG]
     SvgBuilderDF --> CanvasSanitizerDF[SVG 清理器]
-    CanvasSanitizerDF --> PngPipeline[SVG → PNG]
+    CanvasSanitizerDF --> NamespaceGuardDF
+    NamespaceGuardDF --> PngPipeline[SVG → PNG]
     PreviewSizerDF --> PngPipeline
-    Examples[示例库选择] --> ExampleValidator[示例语法校验 (11.12.1)]
+    Examples[示例库选择] --> ExampleValidator["示例语法校验 (11.12.1)"]
     ExampleValidator --> EditorInput
     Examples --> GalleryBoard[图表示例卡片]
     EditorInput --> CursorTracker[光标位置计算]
@@ -230,11 +235,13 @@ graph TD
   activate --> render
   initialize --> updateVersionLabel
   render --> svgBuilder[buildSvgElement]
-  render --> sizeSync[syncPreviewCanvasSize]
+  render --> namespaceGuard[ensureSvgNamespaces]
+  namespaceGuard --> sizeSync[syncPreviewCanvasSize]
   render --> resetView
   render --> setStatus[setStatusMessage]
   svgBuilder --> domParser[DOMParser.parseFromString]
   svgBuilder --> xmlSerializer[XMLSerializer]
+  svgBuilder --> namespaceGuard
   sizeSync --> sizeCalc[calculateSvgDimensions]
   sizeCalc --> parseDim[parseDimension]
   resetView --> applyPanZoom
@@ -253,6 +260,7 @@ graph TD
   copyPng --> svgToPng[svgToPngBlob]
   downloadPng --> svgToPng
   svgToPng --> sanitizeSvg[sanitizeSvgForCanvas]
+  sanitizeSvg --> namespaceGuard
   svgToPng --> parseSize[parseSvgDimensions]
   parseSize --> sizeCalc
   showMessage[showTempMessage] --> setStatus
@@ -266,23 +274,23 @@ graph TD
 ## 用户视角用例
 
 ```mermaid
-usecaseDiagram
-  actor User
-  rectangle LocalMermaid {
-    usecase UC1 as "选择预置示例"
-    usecase UC2 as "编辑并渲染 Mermaid 图"
-    usecase UC3 as "查看渲染错误提示"
-    usecase UC4 as "复制当前代码"
-    usecase UC5 as "导出 SVG 文件"
-    usecase UC6 as "切换浅色/深色主题"
-    usecase UC7 as "复制渲染 PNG"
-    usecase UC8 as "下载 PNG 图像"
-    usecase UC9 as "切换 Mermaid 版本"
-    usecase UC10 as "缩放/平移预览图"
-    usecase UC11 as "查看行号与行数"
-    usecase UC12 as "查看光标所在行列"
-    usecase UC13 as "浏览多类型示例"
-  }
+flowchart TD
+  User((用户))
+  subgraph LocalMermaid[LocalMermaid 工作台]
+    UC1[选择预置示例]
+    UC2[编辑并渲染 Mermaid 图]
+    UC3[查看渲染错误提示]
+    UC4[复制当前代码]
+    UC5[导出 SVG 文件]
+    UC6[切换浅色/深色主题]
+    UC7[复制渲染 PNG]
+    UC8[下载 PNG 图像]
+    UC9[切换 Mermaid 版本]
+    UC10[缩放/平移预览图]
+    UC11[查看行号与行数]
+    UC12[查看光标所在行列]
+    UC13[浏览多类型示例]
+  end
   User --> UC1
   User --> UC2
   User --> UC3

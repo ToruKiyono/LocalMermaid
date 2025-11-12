@@ -491,6 +491,21 @@ function renderDiagram() {
     });
 }
 
+function ensureSvgNamespaces(svgElement) {
+  if (!svgElement) return;
+
+  if (!svgElement.getAttribute('xmlns')) {
+    svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  }
+
+  const usesXlink =
+    svgElement.hasAttribute('xlink:href') ||
+    svgElement.querySelector('[xlink\\:href]');
+  if (usesXlink && !svgElement.getAttribute('xmlns:xlink')) {
+    svgElement.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  }
+}
+
 function buildSvgElement(svgString) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgString, 'image/svg+xml');
@@ -505,6 +520,8 @@ function buildSvgElement(svgString) {
   }
 
   const svgElement = document.importNode(svgNode, true);
+  ensureSvgNamespaces(svgElement);
+
   if (!svgElement.getAttribute('preserveAspectRatio')) {
     svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   }
@@ -1038,6 +1055,7 @@ function sanitizeSvgForCanvas(svgString) {
     }
 
     const svgElement = doc.documentElement;
+    ensureSvgNamespaces(svgElement);
     const styles = svgElement.querySelectorAll('style');
     styles.forEach((styleEl) => {
       const original = styleEl.textContent || '';
