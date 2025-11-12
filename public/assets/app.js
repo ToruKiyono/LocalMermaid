@@ -454,6 +454,12 @@ function renderDiagram() {
 
   setStatusMessage('', 'neutral');
   preview.innerHTML = '';
+  if (preview.style.width) {
+    preview.style.width = '';
+  }
+  if (preview.style.height) {
+    preview.style.height = '';
+  }
   currentSvg = '';
 
   const renderId = `mermaid-${Date.now()}`;
@@ -473,6 +479,7 @@ function renderDiagram() {
         return;
       }
       preview.replaceChildren(svgElement);
+      syncPreviewCanvasSize(svgElement);
       currentSvg = new XMLSerializer().serializeToString(svgElement);
       if (typeof bindFunctions === 'function') {
         bindFunctions(preview);
@@ -506,6 +513,14 @@ function buildSvgElement(svgString) {
   svgElement.style.maxHeight = '100%';
   svgElement.style.pointerEvents = 'auto';
   return svgElement;
+}
+
+function syncPreviewCanvasSize(svgElement) {
+  if (!preview || !svgElement) return;
+
+  const { width, height } = calculateSvgDimensions(svgElement);
+  preview.style.width = `${width}px`;
+  preview.style.height = `${height}px`;
 }
 
 function copyCode() {
@@ -932,36 +947,81 @@ function parseSvgDimensions(svgString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgString, 'image/svg+xml');
     const svg = doc.documentElement;
-    const widthAttr = svg.getAttribute('width');
-    const heightAttr = svg.getAttribute('height');
-    let width = Number.parseFloat(widthAttr);
-    let height = Number.parseFloat(heightAttr);
-
-    if ((!Number.isFinite(width) || width <= 0 || /%$/.test(widthAttr || '')) && svg.getAttribute('viewBox')) {
-      const [, , viewBoxWidth, viewBoxHeight] = svg
-        .getAttribute('viewBox')
-        .split(/\s+/)
-        .map((value) => Number.parseFloat(value));
-      if (Number.isFinite(viewBoxWidth)) {
-        width = viewBoxWidth;
-      }
-      if (Number.isFinite(viewBoxHeight)) {
-        height = viewBoxHeight;
-      }
-    }
-
-    if (!Number.isFinite(width) || width <= 0) {
-      width = 1024;
-    }
-    if (!Number.isFinite(height) || height <= 0) {
-      height = 768;
-    }
-
-    return { width, height };
+    return calculateSvgDimensions(svg);
   } catch (error) {
     console.warn('无法解析 SVG 尺寸，使用默认值。', error);
     return { width: 1024, height: 768 };
   }
+}
+
+function calculateSvgDimensions(svgElement) {
+  if (!svgElement) {
+    return { width: 1024, height: 768 };
+  }
+
+  const widthAttr = svgElement.getAttribute('width');
+  const heightAttr = svgElement.getAttribute('height');
+  let width = parseDimension(widthAttr);
+  let height = parseDimension(heightAttr);
+
+  const hasPercentageWidth = typeof widthAttr === 'string' && /%$/.test(widthAttr.trim());
+  const hasPercentageHeight = typeof heightAttr === 'string' && /%$/.test(heightAttr.trim());
+
+  if ((!Number.isFinite(width) || width <= 0 || hasPercentageWidth) && svgElement.viewBox?.baseVal) {
+    if (Number.isFinite(svgElement.viewBox.baseVal?.width) && svgElement.viewBox.baseVal.width > 0) {
+      width = svgElement.viewBox.baseVal.width;
+    }
+    if (Number.isFinite(svgElement.viewBox.baseVal?.height) && svgElement.viewBox.baseVal.height > 0) {
+      height = svgElement.viewBox.baseVal.height;
+    }
+  }
+
+  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
+    try {
+      const bbox = svgElement.getBBox();
+      if ((!Number.isFinite(width) || width <= 0) && Number.isFinite(bbox?.width) && bbox.width > 0) {
+        width = bbox.width;
+      }
+      if ((!Number.isFinite(height) || height <= 0) && Number.isFinite(bbox?.height) && bbox.height > 0) {
+        height = bbox.height;
+      }
+    } catch (error) {
+      // getBBox 可能在 SVG 未完全挂载时抛出异常，忽略即可
+    }
+  }
+
+  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
+    const rect = svgElement.getBoundingClientRect();
+    if ((!Number.isFinite(width) || width <= 0) && Number.isFinite(rect?.width) && rect.width > 0) {
+      width = rect.width;
+    }
+    if ((!Number.isFinite(height) || height <= 0) && Number.isFinite(rect?.height) && rect.height > 0) {
+      height = rect.height;
+    }
+  }
+
+  if (!Number.isFinite(width) || width <= 0) {
+    width = 1024;
+  }
+  if (!Number.isFinite(height) || height <= 0) {
+    height = 768;
+  }
+
+  return { width, height };
+}
+
+function parseDimension(raw) {
+  if (typeof raw !== 'string') {
+    return Number.NaN;
+  }
+
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return Number.NaN;
+  }
+
+  const value = Number.parseFloat(trimmed.replace(/(px|em|rem|vh|vw)$/i, ''));
+  return Number.isFinite(value) ? value : Number.NaN;
 }
 
 function svgToPngBlob(svgString) {

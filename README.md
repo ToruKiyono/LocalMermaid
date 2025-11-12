@@ -14,6 +14,7 @@
 ## 本次更新亮点
 
 - 🖼️ 修复渲染结果面板出现空白的问题：新增 SVG 构建器，通过 `DOMParser` 导入渲染结果，保持在线预览与导出图像的一致性。
+- 🧮 预览画布会根据 Mermaid 输出的 SVG 尺寸自动撑开，同步修正平移/缩放与下载尺寸，彻底解决“下载正常但页面空白”的问题。
 - 🧭 预览容器改为弹性居中布局并与平移/缩放逻辑联动，确保图表默认居中显示且始终可拖拽查看。
 - 📚 同步更新系统架构图、数据流图、调用图与用例描述，反映 SVG 构建流程及渲染链路的最新实现。
 
@@ -138,10 +139,12 @@ graph TD
   App --> Styles[assets/styles.css]
   Mermaid --> RenderPipeline[渲染流程<br/>mermaid.render]
   RenderPipeline --> SvgBuilder[SVG 构建器<br/>buildSvgElement]
-  SvgBuilder --> Preview[预览画布<br/>preview]
+  SvgBuilder --> PreviewSizer[SVG 尺寸同步<br/>syncPreviewCanvasSize]
+  PreviewSizer --> Preview[预览画布<br/>preview]
   PanZoom --> Preview
   HighlightLayer --> Editor[编辑器 textarea]
-  SvgBuilder --> Exporters[导出与复制模块]
+  PreviewSizer --> Exporters[导出与复制模块]
+  SvgBuilder --> Exporters
   Exporters --> Clipboard[Clipboard API]
   Exporters --> FileSave[本地文件保存]
   Scripts[Node.js 脚本] --> Downloader[scripts/download-mermaid.cjs]
@@ -169,11 +172,12 @@ flowchart LR
     Validate -->|成功| Render
     Validate -->|失败| ErrorBox
     Render --> SvgBuilderDF[SVG 构建器]
-    SvgBuilderDF --> Preview[SVG 预览画布]
+    SvgBuilderDF --> PreviewSizerDF[SVG 尺寸同步]
+    PreviewSizerDF --> Preview[SVG 预览画布]
     Preview --> PanZoom[缩放/平移状态]
     PanZoom --> Preview
     SvgBuilderDF --> SvgExport[导出 SVG]
-    SvgBuilderDF --> PngPipeline[SVG → PNG]
+    PreviewSizerDF --> PngPipeline[SVG → PNG]
     Examples[示例库选择] --> ExampleValidator[示例语法校验 (11.12.1)]
     ExampleValidator --> EditorInput
     Examples --> GalleryBoard[图表示例卡片]
@@ -223,10 +227,13 @@ graph TD
   activate --> render
   initialize --> updateVersionLabel
   render --> svgBuilder[buildSvgElement]
+  render --> sizeSync[syncPreviewCanvasSize]
   render --> resetView
   render --> setStatus[setStatusMessage]
   svgBuilder --> domParser[DOMParser.parseFromString]
   svgBuilder --> xmlSerializer[XMLSerializer]
+  sizeSync --> sizeCalc[calculateSvgDimensions]
+  sizeCalc --> parseDim[parseDimension]
   resetView --> applyPanZoom
   zoom[zoomBy] --> applyPanZoom
   applyTheme --> render
@@ -243,6 +250,7 @@ graph TD
   copyPng --> svgToPng[svgToPngBlob]
   downloadPng --> svgToPng
   svgToPng --> parseSize[parseSvgDimensions]
+  parseSize --> sizeCalc
   showMessage[showTempMessage] --> setStatus
   render --> showMessage
   download --> showMessage
