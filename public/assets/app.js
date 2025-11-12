@@ -23,6 +23,9 @@ const zoomInButton = document.getElementById('zoomInButton');
 const zoomOutButton = document.getElementById('zoomOutButton');
 const resetViewButton = document.getElementById('resetViewButton');
 const zoomDisplay = document.getElementById('zoomDisplay');
+const scrollControls = document.getElementById('scrollControls');
+const scrollTopButton = document.getElementById('scrollTopButton');
+const scrollBottomButton = document.getElementById('scrollBottomButton');
 
 let currentTheme = 'default';
 let currentSvg = '';
@@ -100,6 +103,7 @@ async function bootstrap() {
   }
 
   updateZoomIndicator();
+  updateScrollControlsVisibility();
 }
 
 function resolveDefaultPackageId() {
@@ -655,6 +659,35 @@ function showTempMessage(message) {
   }, 2400);
 }
 
+function scrollPage(direction) {
+  const doc = document.documentElement;
+  const target = direction === 'top' ? 0 : Math.max(0, doc.scrollHeight - doc.clientHeight);
+  window.scrollTo({ top: target, behavior: 'smooth' });
+}
+
+function updateScrollControlsVisibility() {
+  if (!scrollControls) return;
+
+  const doc = document.documentElement;
+  const scrollable = Math.max(0, doc.scrollHeight - doc.clientHeight);
+  const shouldShow = scrollable > 180;
+  const atTop = window.scrollY <= 48;
+  const atBottom = window.scrollY >= scrollable - 48;
+
+  scrollControls.classList.toggle('is-visible', shouldShow && (!atTop || !atBottom));
+
+  if (scrollTopButton) {
+    scrollTopButton.disabled = atTop;
+    scrollTopButton.setAttribute('aria-disabled', String(atTop));
+  }
+
+  if (scrollBottomButton) {
+    const disableBottom = atBottom || !shouldShow;
+    scrollBottomButton.disabled = disableBottom;
+    scrollBottomButton.setAttribute('aria-disabled', String(disableBottom));
+  }
+}
+
 function bindEvents() {
   if (renderButton) {
     renderButton.addEventListener('click', renderDiagram);
@@ -722,6 +755,17 @@ function bindEvents() {
     previewViewport.addEventListener('pointerleave', onPanEnd);
     previewViewport.addEventListener('pointercancel', onPanEnd);
   }
+
+  if (scrollTopButton) {
+    scrollTopButton.addEventListener('click', () => scrollPage('top'));
+  }
+
+  if (scrollBottomButton) {
+    scrollBottomButton.addEventListener('click', () => scrollPage('bottom'));
+  }
+
+  window.addEventListener('scroll', updateScrollControlsVisibility, { passive: true });
+  window.addEventListener('resize', updateScrollControlsVisibility);
 }
 
 function applyTheme(theme) {

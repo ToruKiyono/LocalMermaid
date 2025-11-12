@@ -14,9 +14,14 @@
   --card-bg: rgba(255, 255, 255, 0.82);
   --card-soft: rgba(241, 245, 249, 0.75);
   --panel-radius: 20px;
-  --editor-line-height: 1.68;
-  --editor-padding-y: 1.55rem;
-  --editor-padding-x: 2.5rem;
+  --panel-min-height: clamp(560px, 82vh, 920px);
+  --editor-min-height: clamp(460px, 68vh, 820px);
+  --preview-min-height: clamp(420px, 64vh, 780px);
+  --workspace-margin: 1.35rem;
+  --workspace-padding: 1.25rem;
+  --editor-line-height: 1.62;
+  --editor-padding-y: 1.15rem;
+  --editor-padding-x: 2.4rem;
   --transition: 0.2s ease;
   --token-keyword: #0369a1;
   --token-directive: #0f766e;
@@ -50,6 +55,10 @@ body[data-theme='dark'] {
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -133,8 +142,8 @@ a {
 .layout {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-  gap: 3rem;
-  padding: 0 3rem 4rem;
+  gap: 2.75rem;
+  padding: 0 2.75rem 3.2rem;
   max-width: 1800px;
   margin: 0 auto;
 }
@@ -146,7 +155,7 @@ a {
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
-  min-height: 720px;
+  min-height: var(--panel-min-height);
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
 }
 
@@ -187,7 +196,7 @@ a {
   display: grid;
   grid-template-columns: auto 1fr;
   flex: 1;
-  min-height: 660px;
+  min-height: var(--editor-min-height);
   background: var(--editor-bg);
   border-radius: 0 0 var(--panel-radius) var(--panel-radius);
   overflow: hidden;
@@ -200,7 +209,7 @@ a {
 
 .editor__gutter {
   width: 3.35rem;
-  padding: var(--editor-padding-y) 0 var(--editor-padding-y) 1.2rem;
+  padding: var(--editor-padding-y) 0 var(--editor-padding-y) 1.15rem;
   background: rgba(15, 23, 42, 0.08);
   color: var(--color-subtle);
   border-right: 1px solid rgba(148, 163, 184, 0.25);
@@ -259,7 +268,7 @@ textarea#mermaidInput {
   margin: 0;
   border: none;
   resize: none;
-  font-size: 1.12rem;
+  font-size: 1.08rem;
   line-height: var(--editor-line-height);
   font-family: inherit;
   padding: var(--editor-padding-y) var(--editor-padding-x);
@@ -317,9 +326,9 @@ textarea#mermaidInput::selection {
 
 .preview-viewport {
   flex: 1;
-  min-height: 680px;
-  margin: 0 1.9rem 1.75rem;
-  padding: 1.75rem 2rem 1.9rem;
+  min-height: var(--preview-min-height);
+  margin: 0 var(--workspace-margin) calc(var(--workspace-margin) * 0.85);
+  padding: var(--workspace-padding) calc(var(--workspace-padding) + 0.45rem);
   border-radius: calc(var(--panel-radius) - 8px);
   background: var(--card-soft);
   position: relative;
@@ -527,6 +536,65 @@ input:checked + .slider:before {
   color: rgba(148, 163, 184, 0.7);
 }
 
+.scroll-controls {
+  position: fixed;
+  right: 2rem;
+  bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(1.25rem);
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.scroll-controls.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.scroll-controls__button {
+  padding: 0.6rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.28);
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.scroll-controls__button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.35);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(14, 165, 233, 0.12));
+}
+
+.scroll-controls__button:disabled,
+.scroll-controls__button[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
+  background: var(--card-soft);
+}
+
+body[data-theme='dark'] .scroll-controls__button {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(148, 163, 184, 0.28);
+  box-shadow: 0 18px 34px rgba(8, 47, 73, 0.55);
+}
+
+body[data-theme='dark'] .scroll-controls__button:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(14, 165, 233, 0.2));
+}
+
 .global-error {
   background: rgba(220, 38, 38, 0.12);
   color: #b91c1c;
@@ -549,5 +617,14 @@ body[data-theme='dark'] .global-error {
 
   .panel__actions .btn {
     flex: 1 1 auto;
+  }
+
+  .layout {
+    padding: 0 1.5rem 2.5rem;
+  }
+
+  .scroll-controls {
+    right: 1.2rem;
+    bottom: 1.2rem;
   }
 }
