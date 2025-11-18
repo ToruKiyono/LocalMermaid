@@ -6,7 +6,7 @@
 
 - 🚀 **开箱即用**：仓库自带 `public/vendor/mermaid.min.js`（当前为 v11.12.1）与版本清单，完全离线即可渲染。
 - 🔁 **多版本切换**：读取 `mermaid-meta.json` 中的版本列表，前端可即时切换 Mermaid 内核并刷新当前图表。
-- 🛠️ **编辑体验**：提供语法高亮、行号/行数统计、实时光标行列定位、快捷渲染（Ctrl/⌘ + Enter）、更宽广的编辑面板以及示例库一键载入。
+- 🛠️ **编辑体验**：提供语法高亮、行号/行数统计、实时光标行列定位、快捷渲染（Ctrl/⌘ + Enter）、字体同步机制以及更宽广的编辑面板与示例库一键载入。
 - 🖱️ **预览增强**：渲染结果面板支持缩放、平移、居中复位，默认将图表顶部居中展示，并可复制 PNG、导出 SVG/PNG。
 - ⏫ **快速定位**：浮动按钮支持一键跳转页面顶部/底部，长页面也能迅速回到编辑器或示例区。
 - 🔍 **语法校验**：渲染前自动调用 `mermaid.parse`，第一时间暴露语法错误并提示定位。
@@ -14,9 +14,9 @@
 
 ## 本次更新亮点
 
-- 🖼️ 复制 PNG / 下载 PNG 现在基于内置的 `buildSvgDataUrl` 数据 URI 编码器再下发到 Canvas，有效规避 `tainted canvas` 报错并保持原尺寸渲染。
-- 🛡️ 导出失败时会精准指向编码阶段或浏览器 API 限制，帮助用户快速判断是 SVG 内容、浏览器环境还是图像过大导致的问题。
-- 📚 同步更新 README 的系统架构图、数据流图、调用图与用户用例，展示新的数据 URI 编码流程与导出保障逻辑。
+- ✍️ 修复语法高亮覆盖层与隐藏 textarea 字体参数不一致的问题，鼠标位置、选区与实际编辑的文本重新完全对齐。
+- 📏 新增 `syncEditorTypography` + `--editor-font-size` 组合机制，自动读取 textarea 的字体/行高并同步到高亮层与行号栏，长文档滚动时也不会再出现错位。
+- 📚 更新 README 的系统架构图、数据流图与调用图，记录字体同步阶段与其对编辑体验的守护逻辑。
 
 ## 使用指南
 
@@ -129,8 +129,12 @@ graph TD
   App --> HighlightLayer[语法高亮 & 行号<br/>highlightLayer + gutter]
   App --> CursorIndicator[光标行列指示<br/>cursorPositionLabel]
   App --> OverlaySync[滚动/高度同步<br/>syncOverlayMetrics]
+  App --> TypographySync[字体同步器<br/>--editor-font-size + syncEditorTypography]
   OverlaySync --> HighlightLayer
   OverlaySync --> Gutter[lineNumberGutter]
+  TypographySync --> HighlightLayer
+  TypographySync --> Gutter
+  TypographySync --> Editor[编辑器 textarea]
   CursorIndicator --> FooterMetrics[底部指标<br/>panel__footer]
   App --> PanZoom[预览布局 & 平移缩放<br/>previewViewport]
   App --> LayoutTuner[工作区调优<br/>updateScrollControlsVisibility]
@@ -150,7 +154,7 @@ graph TD
   SvgBuilder --> CanvasSanitizer[SVG 清理器<br/>sanitizeSvgForCanvas]
   CanvasSanitizer --> NamespaceGuard
   CanvasSanitizer --> DataUriEncoder[数据 URI 编码器<br/>buildSvgDataUrl]
-  HighlightLayer --> Editor[编辑器 textarea]
+  HighlightLayer --> Editor
   PreviewSizer --> Exporters[导出与复制模块]
   NamespaceGuard --> Exporters
   DataUriEncoder --> Exporters
@@ -175,8 +179,12 @@ flowchart LR
     LoaderState -->|失败| ErrorBox[错误提示]
     MermaidReady --> Render[mermaid.render]
     EditorInput[编辑器输入] --> Highlight[语法高亮 + 行号]
+    EditorInput --> TypographySyncDF[字体同步器]
+    TypographySyncDF --> Highlight
+    TypographySyncDF --> LineNumbers[lineNumberGutter]
     Highlight --> EditorScroll[滚动同步]
     EditorScroll --> OverlaySizer[高度同步]
+    LineNumbers --> OverlaySizer
     EditorInput --> Validate[mermaid.parse 校验]
     Validate -->|成功| Render
     Validate -->|失败| ErrorBox
@@ -228,6 +236,7 @@ graph TD
   bootstrap --> populateGrid[populateExampleGrid]
   bootstrap --> bind[bindEvents]
   bootstrap --> updateHighlight
+  bootstrap --> syncTypography[syncEditorTypography]
   bootstrap --> setInitialExample
   loadRegistry --> populateVersionSelect
   bind --> render[renderDiagram]
@@ -240,6 +249,8 @@ graph TD
   bind --> updateHighlight
   bind --> syncScroll[syncScrollPosition]
   bind --> cursorEvents[handleSelectionChange]
+  bind --> resizeHandler[window.resize handler]
+  bind --> fontWatcher[document.fonts.loadingdone]
   activate --> loadScript[loadMermaidScript]
   activate --> initialize[initializeMermaid]
   activate --> render
@@ -257,6 +268,7 @@ graph TD
   resetView --> applyPanZoom
   zoom[zoomBy] --> applyPanZoom
   applyTheme --> render
+  applyTheme --> syncTypography
   updateHighlight --> buildHighlight[buildHighlightedHtml]
   updateHighlight --> updateLines[updateLineDecorations]
   updateHighlight --> overlaySync[syncOverlayMetrics]
@@ -266,6 +278,10 @@ graph TD
   syncScroll --> overlaySync
   cursorEvents --> cursorUpdate
   cursorUpdate --> cursorCalc[calculateCursorPosition]
+  resizeHandler --> syncTypography
+  fontWatcher --> syncTypography
+  syncTypography --> normalizeLineHeight[normalizeLineHeight]
+  normalizeLineHeight --> lineHeightRatio[getEditorLineHeightRatio]
   overlaySync --> surfaceHeight[getEditorSurfaceHeight]
   copyPng --> svgToPng[svgToPngBlob]
   downloadPng --> svgToPng

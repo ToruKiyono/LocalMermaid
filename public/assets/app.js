@@ -46,6 +46,7 @@ let lastPanPosition = { x: 0, y: 0 };
 
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 4;
+const DEFAULT_LINE_HEIGHT = 1.62;
 
 const STATUS_COLOR_MAP = {
   neutral: 'var(--color-subtle)',
@@ -91,6 +92,7 @@ async function bootstrap() {
   populateExampleSelect();
   populateExampleGrid();
   bindEvents();
+  syncEditorTypography();
   updateHighlight();
   setInitialExample();
 
@@ -765,7 +767,14 @@ function bindEvents() {
   }
 
   window.addEventListener('scroll', updateScrollControlsVisibility, { passive: true });
-  window.addEventListener('resize', updateScrollControlsVisibility);
+  window.addEventListener('resize', () => {
+    updateScrollControlsVisibility();
+    syncEditorTypography();
+  });
+
+  if (document.fonts && typeof document.fonts.addEventListener === 'function') {
+    document.fonts.addEventListener('loadingdone', syncEditorTypography);
+  }
 }
 
 function applyTheme(theme) {
@@ -775,6 +784,7 @@ function applyTheme(theme) {
     themeToggle.checked = theme === 'dark';
   }
   updateThemeLabel();
+  syncEditorTypography();
 
   if (window.mermaid && mermaidReady) {
     DEFAULT_CONFIG.theme = theme;
@@ -854,6 +864,48 @@ function updateHighlight() {
   syncOverlayMetrics();
   updateLineDecorations(value);
   updateCursorPosition();
+}
+
+function syncEditorTypography() {
+  if (!mermaidInput) return;
+  const styles = window.getComputedStyle(mermaidInput);
+  const fontSize = styles.fontSize || '';
+  const lineHeight = normalizeLineHeight(styles.lineHeight, fontSize);
+  const fontFamily = styles.fontFamily || '';
+  const letterSpacing = styles.letterSpacing || '';
+
+  if (highlightLayer) {
+    highlightLayer.style.fontSize = fontSize;
+    highlightLayer.style.lineHeight = lineHeight;
+    highlightLayer.style.fontFamily = fontFamily;
+    highlightLayer.style.letterSpacing = letterSpacing;
+  }
+
+  if (lineNumberGutter) {
+    lineNumberGutter.style.fontSize = fontSize;
+    lineNumberGutter.style.lineHeight = lineHeight;
+  }
+}
+
+function normalizeLineHeight(rawLineHeight, fontSize) {
+  if (rawLineHeight && rawLineHeight !== 'normal') {
+    return rawLineHeight;
+  }
+
+  const numericFontSize = parseFloat(fontSize) || 16;
+  const ratio = getEditorLineHeightRatio();
+  return `${(numericFontSize * ratio).toFixed(3)}px`;
+}
+
+function getEditorLineHeightRatio() {
+  const root = document.documentElement;
+  if (!root) {
+    return DEFAULT_LINE_HEIGHT;
+  }
+
+  const styles = window.getComputedStyle(root);
+  const value = parseFloat(styles.getPropertyValue('--editor-line-height'));
+  return Number.isFinite(value) ? value : DEFAULT_LINE_HEIGHT;
 }
 
 function updateLineDecorations(value) {
