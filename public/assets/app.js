@@ -1124,17 +1124,35 @@ function sanitizeSvgForCanvas(svgString) {
   }
 }
 
+function buildSvgDataUrl(svgString) {
+  if (typeof svgString !== 'string' || !svgString.trim()) {
+    throw new Error('缺少可用于导出的 SVG 内容。');
+  }
+
+  try {
+    const encoded = encodeURIComponent(svgString);
+    return `data:image/svg+xml;charset=utf-8,${encoded}`;
+  } catch (error) {
+    throw new Error('无法编码 SVG 内容以生成数据 URI。');
+  }
+}
+
 function svgToPngBlob(svgString) {
   const safeSvg = sanitizeSvgForCanvas(svgString);
   const { width, height } = parseSvgDimensions(safeSvg);
   const scaleFactor = Math.min(3, Math.max(1, 2048 / Math.max(width, height)));
 
   return new Promise((resolve, reject) => {
-    const svgBlob = new Blob([safeSvg], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
+    let url;
+    try {
+      url = buildSvgDataUrl(safeSvg);
+    } catch (error) {
+      reject(error);
+      return;
+    }
+
     const image = new Image();
     image.decoding = 'async';
-    image.crossOrigin = 'anonymous';
     image.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(width * scaleFactor));
@@ -1146,7 +1164,6 @@ function svgToPngBlob(svgString) {
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
       const finalize = (blob) => {
-        URL.revokeObjectURL(url);
         if (blob) {
           resolve(blob);
         } else {
@@ -1170,13 +1187,11 @@ function svgToPngBlob(svgString) {
         }
         finalize(new Blob([buffer], { type: 'image/png' }));
       } catch (conversionError) {
-        URL.revokeObjectURL(url);
         reject(new Error('PNG 导出失败：浏览器不支持必要的 API。'));
       }
     };
 
     image.onerror = () => {
-      URL.revokeObjectURL(url);
       reject(new Error('无法加载 SVG 以生成 PNG。'));
     };
 

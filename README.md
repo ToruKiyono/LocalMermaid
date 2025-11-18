@@ -14,10 +14,9 @@
 
 ## 本次更新亮点
 
-- 🎛️ 收紧编辑器与预览工作区的最小高度、边距与字距，默认占用空间更贴合内容，长段粘贴时底部留白显著减少。
-- 🎯 预览容器采用新的工作区间距与顶部对齐策略，图表在页面中更快进入视野，同时继续支持平移缩放与中心重置。
-- ⏫ 新增悬浮「顶部 / 底部」快捷按钮，结合平滑滚动在编辑器与示例库间快速往返，长页面也能高效定位。
-- 📚 更新系统架构图、数据流图、调用图与用例描述，标注布局调优逻辑与页面滚动控制的新职责划分。
+- 🖼️ 复制 PNG / 下载 PNG 现在基于内置的 `buildSvgDataUrl` 数据 URI 编码器再下发到 Canvas，有效规避 `tainted canvas` 报错并保持原尺寸渲染。
+- 🛡️ 导出失败时会精准指向编码阶段或浏览器 API 限制，帮助用户快速判断是 SVG 内容、浏览器环境还是图像过大导致的问题。
+- 📚 同步更新 README 的系统架构图、数据流图、调用图与用户用例，展示新的数据 URI 编码流程与导出保障逻辑。
 
 ## 使用指南
 
@@ -150,9 +149,11 @@ graph TD
   PanZoom --> Preview
   SvgBuilder --> CanvasSanitizer[SVG 清理器<br/>sanitizeSvgForCanvas]
   CanvasSanitizer --> NamespaceGuard
+  CanvasSanitizer --> DataUriEncoder[数据 URI 编码器<br/>buildSvgDataUrl]
   HighlightLayer --> Editor[编辑器 textarea]
   PreviewSizer --> Exporters[导出与复制模块]
   NamespaceGuard --> Exporters
+  DataUriEncoder --> Exporters
   Exporters --> Clipboard[Clipboard API]
   Exporters --> FileSave[本地文件保存]
   Scripts[Node.js 脚本] --> Downloader[scripts/download-mermaid.cjs]
@@ -188,7 +189,8 @@ flowchart LR
     NamespaceGuardDF --> SvgExport[导出 SVG]
     SvgBuilderDF --> CanvasSanitizerDF[SVG 清理器]
     CanvasSanitizerDF --> NamespaceGuardDF
-    NamespaceGuardDF --> PngPipeline[SVG → PNG]
+    CanvasSanitizerDF --> DataUriEncoderDF[数据 URI 编码]
+    DataUriEncoderDF --> PngPipeline[SVG → PNG]
     PreviewSizerDF --> PngPipeline
     Examples[示例库选择] --> ExampleValidator["示例语法校验 (11.12.1)"]
     ExampleValidator --> EditorInput
@@ -268,6 +270,8 @@ graph TD
   copyPng --> svgToPng[svgToPngBlob]
   downloadPng --> svgToPng
   svgToPng --> sanitizeSvg[sanitizeSvgForCanvas]
+  svgToPng --> dataUriBuilder[buildSvgDataUrl]
+  dataUriBuilder --> svgToPng
   sanitizeSvg --> namespaceGuard
   svgToPng --> parseSize[parseSvgDimensions]
   parseSize --> sizeCalc
