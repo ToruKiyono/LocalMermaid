@@ -56,7 +56,7 @@ let scale = 1;
 let isPanning = false;
 let panPointerId = null;
 let lastPanPosition = { x: 0, y: 0 };
-let aiSettings = { ...DEFAULT_AI_SETTINGS };
+let aiSettings = null;
 
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 4;
@@ -68,8 +68,15 @@ const DEFAULT_AI_SETTINGS = {
   model: 'gpt-4o-mini',
   apiKey: '',
   systemPrompt: '',
-  prompts: [],
-  lastPromptId: null
+  prompts: [
+    {
+      id: 'prompt-default-architecture',
+      title: '默认架构图提示词',
+      body:
+        '请基于以下信息生成 Mermaid 架构图（flowchart 或 C4 容器图均可），并输出可直接渲染的 Mermaid 代码：\n- 系统名称\n- 主要模块\n- 数据流向\n- 关键依赖'
+    }
+  ],
+  lastPromptId: 'prompt-default-architecture'
 };
 
 const STATUS_COLOR_MAP = {
@@ -738,11 +745,12 @@ function loadAiSettings() {
       return { ...DEFAULT_AI_SETTINGS };
     }
     const parsed = JSON.parse(raw);
+    const storedPrompts = Array.isArray(parsed.prompts) && parsed.prompts.length ? parsed.prompts : null;
     return {
       ...DEFAULT_AI_SETTINGS,
       ...parsed,
-      prompts: Array.isArray(parsed.prompts) ? parsed.prompts : [],
-      lastPromptId: parsed.lastPromptId || null
+      prompts: storedPrompts || DEFAULT_AI_SETTINGS.prompts,
+      lastPromptId: parsed.lastPromptId || DEFAULT_AI_SETTINGS.lastPromptId
     };
   } catch (error) {
     console.warn('读取 AI 设置失败，将使用默认值。', error);
