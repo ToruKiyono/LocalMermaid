@@ -32,8 +32,11 @@ const aiEndpointInput = document.getElementById('aiEndpoint');
 const aiModelInput = document.getElementById('aiModel');
 const aiApiKeyInput = document.getElementById('aiApiKey');
 const aiSystemPromptInput = document.getElementById('aiSystemPrompt');
+const aiProxyToggle = document.getElementById('aiProxyToggle');
+const aiAutoFixToggle = document.getElementById('aiAutoFixToggle');
 const promptTitleInput = document.getElementById('promptTitle');
 const promptBodyInput = document.getElementById('promptBody');
+const promptExtraInput = document.getElementById('promptExtra');
 const promptSelect = document.getElementById('promptSelect');
 const promptApplyButton = document.getElementById('promptApplyButton');
 const promptSaveButton = document.getElementById('promptSaveButton');
@@ -57,6 +60,7 @@ let isPanning = false;
 let panPointerId = null;
 let lastPanPosition = { x: 0, y: 0 };
 let aiSettings = null;
+let isAutoFixing = false;
 
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 4;
@@ -68,12 +72,15 @@ const DEFAULT_AI_SETTINGS = {
   model: 'gpt-4o-mini',
   apiKey: '',
   systemPrompt: '',
+  useProxy: false,
+  autoFix: false,
+  extraInput: '',
   prompts: [
     {
       id: 'prompt-default-architecture',
       title: '默认架构图提示词',
       body:
-        '请基于以下信息生成 Mermaid 架构图（flowchart 或 C4 容器图均可），并输出可直接渲染的 Mermaid 代码：\n- 系统名称\n- 主要模块\n- 数据流向\n- 关键依赖'
+        '你是 Mermaid 语法专家与系统架构师。\n请严格输出“可直接渲染”的 Mermaid 代码，不要输出任何解释、Markdown 或多余文本。\n要求：\n1) 选择合适的图类型（flowchart / C4 / sequence 等），保证结构清晰。\n2) 中文说明，避免语法错误。\n3) 对齐模块、数据流、依赖关系。\n4) 保证每行 Mermaid 语法完整可用。\n\n请基于以下信息生成架构图：\n- 系统名称\n- 主要模块\n- 数据流向\n- 关键依赖\n- 可选：部署环境、外部系统'
     }
   ],
   lastPromptId: 'prompt-default-architecture'
@@ -486,7 +493,9 @@ function renderDiagram() {
   try {
     window.mermaid.parse(code);
   } catch (parseError) {
-    setStatusMessage(parseError.str || parseError.message || '解析失败，请检查语法。', 'error');
+    const message = parseError.str || parseError.message || '解析失败，请检查语法。';
+    setStatusMessage(message, 'error');
+    handleRenderError(message);
     return;
   }
 
@@ -525,7 +534,9 @@ function renderDiagram() {
       resetView(true);
     })
     .catch((renderError) => {
-      setStatusMessage(renderError.message || '渲染失败，请检查输入内容。', 'error');
+      const message = renderError.message || '渲染失败，请检查输入内容。';
+      setStatusMessage(message, 'error');
+      handleRenderError(message);
     });
 }
 
@@ -768,6 +779,9 @@ function applyAiSettingsToForm(settings) {
   if (aiModelInput) aiModelInput.value = settings.model || '';
   if (aiApiKeyInput) aiApiKeyInput.value = settings.apiKey || '';
   if (aiSystemPromptInput) aiSystemPromptInput.value = settings.systemPrompt || '';
+  if (aiProxyToggle) aiProxyToggle.checked = Boolean(settings.useProxy);
+  if (aiAutoFixToggle) aiAutoFixToggle.checked = Boolean(settings.autoFix);
+  if (promptExtraInput) promptExtraInput.value = settings.extraInput || '';
 }
 
 function refreshPromptSelect() {
@@ -805,11 +819,23 @@ function updateAiStatus(message, tone = 'neutral') {
   aiStatus.style.color = colorMap[tone] || '';
 }
 
+function handleRenderError(message) {
+  if (!aiSettings || !aiSettings.autoFix) return;
+  if (isAutoFixing) return;
+  if (!aiSettings.endpoint || !aiSettings.model || !aiSettings.apiKey) return;
+  if (!mermaidInput || !mermaidInput.value.trim()) return;
+  isAutoFixing = true;
+  runAiTask('auto-fix', { errorMessage: message });
+}
+
 function syncAiSettingsFromForm() {
   if (aiEndpointInput) aiSettings.endpoint = aiEndpointInput.value.trim();
   if (aiModelInput) aiSettings.model = aiModelInput.value.trim();
   if (aiApiKeyInput) aiSettings.apiKey = aiApiKeyInput.value.trim();
   if (aiSystemPromptInput) aiSettings.systemPrompt = aiSystemPromptInput.value.trim();
+  if (aiProxyToggle) aiSettings.useProxy = aiProxyToggle.checked;
+  if (aiAutoFixToggle) aiSettings.autoFix = aiAutoFixToggle.checked;
+  if (promptExtraInput) aiSettings.extraInput = promptExtraInput.value.trim();
   persistAiSettings();
 }
 
@@ -877,7 +903,7 @@ function applySelectedPrompt() {
   updateAiStatus('模板已载入。', 'info');
 }
 
-function buildAiRequestPayload(mode, promptBody, currentCode) {
+function buildAiRequestPayload(mode, promptBody, currentCode, extraInput = '', errorMessage = '') {
   const systemParts = [
     '你是资深 Mermaid 架构师与前端工程师。',
     '请只返回 Mermaid 代码，不要包含解释或 Markdown。'
@@ -889,8 +915,14 @@ function buildAiRequestPayload(mode, promptBody, currentCode) {
   let userPrompt = '';
   if (mode === 'modify') {
     userPrompt = `请根据以下需求修改 Mermaid 代码，并输出完整的新图表：\n需求：${promptBody || '优化图表排版与可读性'}\n\n当前 Mermaid 代码：\n${currentCode}`;
+  } else if (mode === 'auto-fix') {
+    userPrompt = `请修复以下 Mermaid 渲染错误，并输出完整可用的 Mermaid 代码：\n渲染错误：${errorMessage || '未知错误'}\n\n当前 Mermaid 代码：\n${currentCode}`;
   } else {
     userPrompt = `请根据以下描述生成 Mermaid 架构图，优先使用 flowchart 或 C4 容器图：\n描述：${promptBody}\n\n请确保输出可直接渲染。`;
+  }
+
+  if (extraInput) {
+    userPrompt += `\n\n补充信息：\n${extraInput}`;
   }
 
   return {
@@ -933,11 +965,12 @@ function applyMermaidCode(code) {
   renderDiagram();
 }
 
-async function runAiTask(mode) {
+async function runAiTask(mode, options = {}) {
   if (!aiEndpointInput || !aiModelInput || !aiApiKeyInput) return;
   syncAiSettingsFromForm();
   const promptBody = promptBodyInput ? promptBodyInput.value.trim() : '';
-  if (!promptBody) {
+  const extraInput = promptExtraInput ? promptExtraInput.value.trim() : '';
+  if (!promptBody && mode !== 'auto-fix') {
     updateAiStatus('请先填写提示词内容。', 'error');
     return;
   }
@@ -946,17 +979,29 @@ async function runAiTask(mode) {
     return;
   }
   const currentCode = mermaidInput?.value || '';
-  const payload = buildAiRequestPayload(mode, promptBody, currentCode);
+  const payload = buildAiRequestPayload(
+    mode,
+    promptBody,
+    currentCode,
+    extraInput,
+    options.errorMessage || ''
+  );
   updateAiStatus('正在请求模型，请稍候...', 'info');
 
+  const isProxy = Boolean(aiSettings.useProxy);
+  const requestUrl = isProxy ? '/proxy' : aiSettings.endpoint;
+  const requestBody = isProxy
+    ? JSON.stringify({ endpoint: aiSettings.endpoint, payload, apiKey: aiSettings.apiKey })
+    : JSON.stringify(payload);
+  const headers = isProxy
+    ? { 'Content-Type': 'application/json' }
+    : { 'Content-Type': 'application/json', Authorization: `Bearer ${aiSettings.apiKey}` };
+
   try {
-    const response = await fetch(aiSettings.endpoint, {
+    const response = await fetch(requestUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${aiSettings.apiKey}`
-      },
-      body: JSON.stringify(payload)
+      headers,
+      body: requestBody
     });
     if (!response.ok) {
       const text = await response.text();
@@ -970,10 +1015,25 @@ async function runAiTask(mode) {
       return;
     }
     applyMermaidCode(mermaidCode);
-    updateAiStatus(mode === 'modify' ? '已更新 Mermaid 代码。' : '已生成 Mermaid 架构图。', 'success');
+    updateAiStatus(
+      mode === 'modify'
+        ? '已更新 Mermaid 代码。'
+        : mode === 'auto-fix'
+          ? '已自动修复 Mermaid 代码。'
+          : '已生成 Mermaid 架构图。',
+      'success'
+    );
   } catch (error) {
     console.error('AI 请求失败：', error);
-    updateAiStatus(`AI 请求失败：${error.message || error}`, 'error');
+    const message = error.message || error;
+    const corsHint = String(message).includes('CORS')
+      ? '（可能是 CORS 限制，可勾选“通过本地代理请求”）'
+      : '';
+    updateAiStatus(`AI 请求失败：${message}${corsHint}`, 'error');
+  } finally {
+    if (mode === 'auto-fix') {
+      isAutoFixing = false;
+    }
   }
 }
 
@@ -1065,6 +1125,12 @@ function bindEvents() {
   if (aiSystemPromptInput) {
     aiSystemPromptInput.addEventListener('change', syncAiSettingsFromForm);
   }
+  if (aiProxyToggle) {
+    aiProxyToggle.addEventListener('change', syncAiSettingsFromForm);
+  }
+  if (aiAutoFixToggle) {
+    aiAutoFixToggle.addEventListener('change', syncAiSettingsFromForm);
+  }
   if (promptApplyButton) {
     promptApplyButton.addEventListener('click', applySelectedPrompt);
   }
@@ -1079,6 +1145,9 @@ function bindEvents() {
       aiSettings.lastPromptId = promptSelect.value || null;
       persistAiSettings();
     });
+  }
+  if (promptExtraInput) {
+    promptExtraInput.addEventListener('change', syncAiSettingsFromForm);
   }
   if (aiModifyButton) {
     aiModifyButton.addEventListener('click', () => runAiTask('modify'));

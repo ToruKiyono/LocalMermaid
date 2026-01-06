@@ -8,16 +8,18 @@
 - 🔁 **多版本切换**：读取 `mermaid-meta.json` 中的版本列表，前端可即时切换 Mermaid 内核并刷新当前图表。
 - 🛠️ **编辑体验**：提供语法高亮、行号/行数统计、实时光标行列定位、快捷渲染（Ctrl/⌘ + Enter）、字体同步机制以及更宽广的编辑面板与示例库一键载入。
 - 🖱️ **预览增强**：渲染结果面板支持缩放、平移、居中复位，默认将图表顶部居中展示，并可复制 PNG、导出 SVG/PNG。
-- 🤖 **AI 助手**：支持配置大模型 API/凭证与自定义提示词模板，并内置默认提示词，直接完成 Mermaid 代码自动修改与架构图生成。
+- 🤖 **AI 助手**：支持配置大模型 API/凭证与自定义提示词模板，并内置默认提示词，直接完成 Mermaid 代码自动修改与架构图生成；可在渲染报错时自动调用 AI 修复。
+- 🧩 **CORS 处理**：内置本地代理模式，解决浏览器调用外部模型 API 的跨域问题。
 - ⏫ **快速定位**：浮动按钮支持一键跳转页面顶部/底部，长页面也能迅速回到编辑器或示例区。
 - 🔍 **语法校验**：渲染前自动调用 `mermaid.parse`，第一时间暴露语法错误并提示定位。
 - 🎨 **示例图库**：涵盖流程、时序、状态、旅程、甘特、类图、ER、Git Graph、饼图、折线/柱状/XY 图、思维导图、时间线、需求图、象限图、C4、桑基图等 16+ 彩色案例，全部通过 v11.12.1 语法校验。
 
 ## 本次更新亮点
 
-- 🧩 修复 AI 助手初始化顺序问题，确保示例库、编辑器与渲染区域正常加载。
-- 🤖 AI 助手增加默认提示词模板，并继续支持模型 API 地址、Key、模型名称与系统提示词配置。
-- 📚 更新 README 的系统架构图、数据流图、调用图与用户用例图，补充默认模板与本地提示词管理路径。
+- 🤖 新增 AI 自动修复开关与用户补充输入字段，渲染报错时可自动调用 AI 生成修复后的 Mermaid。
+- 🧩 本地代理模式支持绕过 CORS 限制，并保持 API Key 在本地传递。
+- 🧭 调整页面布局为“编辑/预览并列 + AI 面板全宽”的结构，减少视觉噪音并提升整体观感。
+- 📚 更新 README 的系统架构图、数据流图、调用图与用户用例图，补充 AI 自动修复、本地代理与布局栅格路径。
 
 ## 使用指南
 
@@ -72,7 +74,8 @@
    - 如有语法问题，错误信息会显示在预览区域顶部。
    - 支持语法高亮、行号/行数统计、光标行列提示、一键复制代码、复制 PNG、导出 SVG/PNG、版本切换，以及浅色/深色主题切换。
    - 预览面板内置缩放、平移与重置视图控制，帮助在大图场景下查看细节。
-   - AI 助手可配置模型 API 地址与 Key，并保存提示词模板，一键完成 Mermaid 代码优化或架构图生成。
+   - AI 助手可配置模型 API 地址与 Key，并保存提示词模板，一键完成 Mermaid 代码优化或架构图生成；支持渲染报错自动修复与用户补充输入。
+   - 若遇到 CORS 报错，可勾选“通过本地代理请求”，并通过 `npm run start` 启动本地服务器使用代理转发。
 
 ## 内置示例一览
 
@@ -144,19 +147,26 @@ graph TD
   Examples --> SyntaxAudit[语法校验（11.12.1）]
   SyntaxAudit --> Gallery[16 类示例<br/>flowchart/xychart/C4...]
   App --> Styles[assets/styles.css]
+  App --> LayoutGrid[页面布局栅格<br/>grid-template-areas]
+  LayoutGrid --> EditorPanel[编辑器面板]
+  LayoutGrid --> PreviewPanel[预览面板]
+  LayoutGrid --> AiPanel
   LayoutTuner --> Styles
   LayoutTuner --> ScrollControls[快速滚动控制<br/>scrollControls]
   ScrollControls --> SmoothScroll[平滑滚动器<br/>scrollPage]
   App --> AiPanel[AI 助手面板]
   AiPanel --> AiConfig[模型配置表单]
   AiPanel --> PromptTemplates[提示词模板管理]
+  AiPanel --> AutoFixToggle[自动修复开关]
+  AiPanel --> ProxyToggle[本地代理开关]
   AiConfig --> LocalStore[浏览器本地存储<br/>localStorage]
   PromptTemplates --> LocalStore
   PromptTemplates --> DefaultPrompt[默认提示词模板]
   AiPanel --> AiRequester[AI 请求器<br/>runAiTask]
   AiRequester --> AiParser[响应解析器<br/>extractMermaidCode]
   AiParser --> Editor
-  AiRequester --> LlmApi[模型 API]
+  AiRequester --> ProxyEndpoint[/proxy 代理]
+  ProxyEndpoint --> LlmApi[模型 API]
   Mermaid --> RenderPipeline[渲染流程<br/>mermaid.render]
   RenderPipeline --> SvgBuilder[SVG 构建器<br/>buildSvgElement]
   SvgBuilder --> NamespaceGuard[命名空间补全<br/>ensureSvgNamespaces]
@@ -175,6 +185,7 @@ graph TD
   Scripts[Node.js 脚本] --> Downloader[scripts/download-mermaid.cjs]
   Scripts --> ProxyHelper[scripts/lib/proxy.js]
   Scripts --> DevServer[scripts/serve.cjs]
+  DevServer --> ProxyEndpoint
   Downloader --> VersionManifest
   Downloader --> MermaidBundle[public/vendor/mermaid.min.js]
   DevServer -->|http://localhost:4173| User
@@ -227,13 +238,21 @@ flowchart LR
     ScrollControlsUI --> SmoothScrollDF[scrollPage 平滑滚动]
     SmoothScrollDF --> WindowScroll[window.scrollTo]
     WindowScroll --> LayoutMonitor
+    LayoutGridDF[布局栅格] --> EditorInput
+    LayoutGridDF --> Preview
+    LayoutGridDF --> AiForm
     AiForm[AI 配置表单] --> AiSettingsStore[本地存储 localStorage]
     AiTemplates[提示词模板] --> AiSettingsStore
     AiSettingsStore --> DefaultPromptDF[默认提示词模板]
     AiTemplates --> PromptBody[提示词内容]
+    AutoFixToggleDF[自动修复开关] --> AiSettingsStore
+    ProxyToggleDF[本地代理开关] --> AiSettingsStore
     PromptBody --> AiRequest[AI 请求 payload]
     EditorInput --> AiRequest
-    AiRequest -->|fetch| LlmApi[模型 API]
+    RenderError[渲染错误提示] --> AutoFixTrigger[触发 AI 自动修复]
+    AutoFixTrigger --> AiRequest
+    AiRequest -->|fetch| ProxyEndpointDF[/proxy 代理]
+    ProxyEndpointDF --> LlmApi[模型 API]
     LlmApi --> AiResponse[模型响应]
     AiResponse --> AiParser[Mermaid 代码解析]
     AiParser --> EditorInput
@@ -261,6 +280,7 @@ graph TD
   bootstrap --> syncTypography[syncEditorTypography]
   bootstrap --> setInitialExample
   bootstrap --> aiInit[initializeAiAssistant]
+  bootstrap --> layoutStyles[布局样式（styles.css）]
   loadRegistry --> populateVersionSelect
   bind --> render[renderDiagram]
   bind --> copy[copyCode]
@@ -271,6 +291,8 @@ graph TD
   bind --> aiApplyPrompt[applySelectedPrompt]
   bind --> aiSavePrompt[savePromptTemplate]
   bind --> aiDeletePrompt[deletePromptTemplate]
+  bind --> aiAutoFixToggle[autoFix change handler]
+  bind --> aiProxyToggle[proxy change handler]
   bind --> applyTheme
   bind --> activate[activateMermaidPackage]
   bind --> updateHighlight
@@ -287,6 +309,7 @@ graph TD
   namespaceGuard --> sizeSync[syncPreviewCanvasSize]
   render --> resetView
   render --> setStatus[setStatusMessage]
+  render --> errorHandler[handleRenderError]
   svgBuilder --> domParser[DOMParser.parseFromString]
   svgBuilder --> xmlSerializer[XMLSerializer]
   svgBuilder --> namespaceGuard
@@ -363,6 +386,9 @@ flowchart TD
     UC16[保存/载入提示词模板]
     UC17[AI 修改当前 Mermaid 图]
     UC18[AI 生成架构图]
+    UC19[补充用户输入]
+    UC20[开启自动修复]
+    UC21[使用本地代理绕过 CORS]
   end
   User --> UC1
   User --> UC2
@@ -382,6 +408,9 @@ flowchart TD
   User --> UC16
   User --> UC17
   User --> UC18
+  User --> UC19
+  User --> UC20
+  User --> UC21
 ```
 
 ## 许可证

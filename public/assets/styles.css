@@ -142,11 +142,15 @@ a {
 
 .layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+  grid-template-columns: minmax(520px, 1fr) minmax(520px, 1fr);
+  grid-template-areas:
+    "editor preview"
+    "ai ai";
   gap: 2.75rem;
   padding: 0 2.75rem 3.2rem;
   max-width: 1800px;
   margin: 0 auto;
+  align-items: start;
 }
 
 .panel {
@@ -196,6 +200,18 @@ a {
 .panel__actions--preview {
   align-items: center;
   gap: 0.75rem;
+}
+
+.panel--editor {
+  grid-area: editor;
+}
+
+.panel--preview {
+  grid-area: preview;
+}
+
+.panel--ai {
+  grid-area: ai;
 }
 
 .panel--ai {
@@ -252,6 +268,20 @@ a {
   resize: vertical;
 }
 
+.ai-checkline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.ai-checkline input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
 .ai-span-2 {
   grid-column: span 2;
 }
@@ -261,6 +291,16 @@ a {
   gap: 0.75rem;
   flex-wrap: wrap;
   align-items: flex-end;
+}
+
+@media (max-width: 1200px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "editor"
+      "preview"
+      "ai";
+  }
 }
 
 .ai-status {

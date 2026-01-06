@@ -105,6 +105,14 @@
               系统提示词（可选）
               <textarea id="aiSystemPrompt" rows="3" placeholder="例如：你是 Mermaid 资深架构师..."></textarea>
             </label>
+            <label class="ai-span-2 ai-checkline">
+              <input type="checkbox" id="aiProxyToggle" />
+              通过本地代理请求（解决 CORS）
+            </label>
+            <label class="ai-span-2 ai-checkline">
+              <input type="checkbox" id="aiAutoFixToggle" />
+              渲染报错后自动调用 AI 修复
+            </label>
           </div>
         </div>
         <div class="ai-section">
@@ -117,6 +125,10 @@
             <label class="ai-span-2">
               提示词内容（用于修改/生成）
               <textarea id="promptBody" rows="6" placeholder="描述你的需求或系统结构..."></textarea>
+            </label>
+            <label class="ai-span-2">
+              用户补充输入（将附加到 AI 请求）
+              <textarea id="promptExtra" rows="3" placeholder="补充背景、风格或约束信息..."></textarea>
             </label>
             <label>
               已保存模板
