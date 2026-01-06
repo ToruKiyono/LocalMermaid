@@ -26,6 +26,19 @@ const zoomDisplay = document.getElementById('zoomDisplay');
 const scrollControls = document.getElementById('scrollControls');
 const scrollTopButton = document.getElementById('scrollTopButton');
 const scrollBottomButton = document.getElementById('scrollBottomButton');
+const aiModifyButton = document.getElementById('aiModifyButton');
+const aiArchitectureButton = document.getElementById('aiArchitectureButton');
+const aiEndpointInput = document.getElementById('aiEndpoint');
+const aiModelInput = document.getElementById('aiModel');
+const aiApiKeyInput = document.getElementById('aiApiKey');
+const aiSystemPromptInput = document.getElementById('aiSystemPrompt');
+const promptTitleInput = document.getElementById('promptTitle');
+const promptBodyInput = document.getElementById('promptBody');
+const promptSelect = document.getElementById('promptSelect');
+const promptApplyButton = document.getElementById('promptApplyButton');
+const promptSaveButton = document.getElementById('promptSaveButton');
+const promptDeleteButton = document.getElementById('promptDeleteButton');
+const aiStatus = document.getElementById('aiStatus');
 
 let currentTheme = 'default';
 let currentSvg = '';
@@ -43,10 +56,21 @@ let scale = 1;
 let isPanning = false;
 let panPointerId = null;
 let lastPanPosition = { x: 0, y: 0 };
+let aiSettings = { ...DEFAULT_AI_SETTINGS };
 
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 4;
 const DEFAULT_LINE_HEIGHT = 1.62;
+
+const AI_STORAGE_KEY = 'localmermaid-ai-settings';
+const DEFAULT_AI_SETTINGS = {
+  endpoint: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  apiKey: '',
+  systemPrompt: '',
+  prompts: [],
+  lastPromptId: null
+};
 
 const STATUS_COLOR_MAP = {
   neutral: 'var(--color-subtle)',
@@ -95,6 +119,7 @@ async function bootstrap() {
   syncEditorTypography();
   updateHighlight();
   setInitialExample();
+  initializeAiAssistant();
 
   await loadMermaidRegistry();
   const defaultId = resolveDefaultPackageId();
@@ -690,6 +715,260 @@ function updateScrollControlsVisibility() {
   }
 }
 
+function initializeAiAssistant() {
+  aiSettings = loadAiSettings();
+  applyAiSettingsToForm(aiSettings);
+  refreshPromptSelect();
+  if (aiSettings.lastPromptId) {
+    const stored = aiSettings.prompts.find((item) => item.id === aiSettings.lastPromptId);
+    if (stored) {
+      applyPromptToEditor(stored);
+    }
+  }
+  updateAiStatus('提示词与配置会保存在浏览器本地。', 'neutral');
+}
+
+function loadAiSettings() {
+  if (typeof localStorage === 'undefined') {
+    return { ...DEFAULT_AI_SETTINGS };
+  }
+  try {
+    const raw = localStorage.getItem(AI_STORAGE_KEY);
+    if (!raw) {
+      return { ...DEFAULT_AI_SETTINGS };
+    }
+    const parsed = JSON.parse(raw);
+    return {
+      ...DEFAULT_AI_SETTINGS,
+      ...parsed,
+      prompts: Array.isArray(parsed.prompts) ? parsed.prompts : [],
+      lastPromptId: parsed.lastPromptId || null
+    };
+  } catch (error) {
+    console.warn('读取 AI 设置失败，将使用默认值。', error);
+    return { ...DEFAULT_AI_SETTINGS };
+  }
+}
+
+function persistAiSettings() {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem(AI_STORAGE_KEY, JSON.stringify(aiSettings));
+}
+
+function applyAiSettingsToForm(settings) {
+  if (aiEndpointInput) aiEndpointInput.value = settings.endpoint || '';
+  if (aiModelInput) aiModelInput.value = settings.model || '';
+  if (aiApiKeyInput) aiApiKeyInput.value = settings.apiKey || '';
+  if (aiSystemPromptInput) aiSystemPromptInput.value = settings.systemPrompt || '';
+}
+
+function refreshPromptSelect() {
+  if (!promptSelect) return;
+  promptSelect.innerHTML = '';
+  if (!aiSettings.prompts.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '暂无模板';
+    promptSelect.appendChild(option);
+    promptSelect.disabled = true;
+    return;
+  }
+  aiSettings.prompts.forEach((prompt) => {
+    const option = document.createElement('option');
+    option.value = prompt.id;
+    option.textContent = prompt.title || '未命名模板';
+    promptSelect.appendChild(option);
+  });
+  promptSelect.disabled = false;
+  if (aiSettings.lastPromptId) {
+    promptSelect.value = aiSettings.lastPromptId;
+  }
+}
+
+function updateAiStatus(message, tone = 'neutral') {
+  if (!aiStatus) return;
+  aiStatus.textContent = message;
+  const colorMap = {
+    neutral: 'var(--color-subtle)',
+    info: 'var(--color-accent)',
+    success: 'var(--color-accent)',
+    error: 'var(--color-danger)'
+  };
+  aiStatus.style.color = colorMap[tone] || '';
+}
+
+function syncAiSettingsFromForm() {
+  if (aiEndpointInput) aiSettings.endpoint = aiEndpointInput.value.trim();
+  if (aiModelInput) aiSettings.model = aiModelInput.value.trim();
+  if (aiApiKeyInput) aiSettings.apiKey = aiApiKeyInput.value.trim();
+  if (aiSystemPromptInput) aiSettings.systemPrompt = aiSystemPromptInput.value.trim();
+  persistAiSettings();
+}
+
+function applyPromptToEditor(prompt) {
+  if (!prompt) return;
+  if (promptTitleInput) promptTitleInput.value = prompt.title || '';
+  if (promptBodyInput) promptBodyInput.value = prompt.body || '';
+}
+
+function savePromptTemplate() {
+  if (!promptTitleInput || !promptBodyInput) return;
+  const title = promptTitleInput.value.trim();
+  const body = promptBodyInput.value.trim();
+  if (!title && !body) {
+    updateAiStatus('请输入模板标题或内容后再保存。', 'error');
+    return;
+  }
+  const existingId = promptSelect && promptSelect.value ? promptSelect.value : null;
+  const existingIndex = aiSettings.prompts.findIndex((item) => item.id === existingId);
+  const payload = {
+    id: existingId || `prompt-${Date.now()}`,
+    title: title || '未命名模板',
+    body
+  };
+  if (existingIndex >= 0) {
+    aiSettings.prompts[existingIndex] = payload;
+  } else {
+    aiSettings.prompts.push(payload);
+  }
+  aiSettings.lastPromptId = payload.id;
+  persistAiSettings();
+  refreshPromptSelect();
+  if (promptSelect) {
+    promptSelect.value = payload.id;
+  }
+  updateAiStatus('模板已保存。', 'success');
+}
+
+function deletePromptTemplate() {
+  if (!promptSelect || promptSelect.disabled || !promptSelect.value) {
+    updateAiStatus('请选择需要删除的模板。', 'error');
+    return;
+  }
+  const id = promptSelect.value;
+  aiSettings.prompts = aiSettings.prompts.filter((item) => item.id !== id);
+  if (aiSettings.lastPromptId === id) {
+    aiSettings.lastPromptId = aiSettings.prompts[0]?.id || null;
+  }
+  persistAiSettings();
+  refreshPromptSelect();
+  applyPromptToEditor(aiSettings.prompts.find((item) => item.id === aiSettings.lastPromptId));
+  updateAiStatus('模板已删除。', 'success');
+}
+
+function applySelectedPrompt() {
+  if (!promptSelect || promptSelect.disabled || !promptSelect.value) {
+    updateAiStatus('请选择可载入的模板。', 'error');
+    return;
+  }
+  const selected = aiSettings.prompts.find((item) => item.id === promptSelect.value);
+  if (!selected) return;
+  aiSettings.lastPromptId = selected.id;
+  persistAiSettings();
+  applyPromptToEditor(selected);
+  updateAiStatus('模板已载入。', 'info');
+}
+
+function buildAiRequestPayload(mode, promptBody, currentCode) {
+  const systemParts = [
+    '你是资深 Mermaid 架构师与前端工程师。',
+    '请只返回 Mermaid 代码，不要包含解释或 Markdown。'
+  ];
+  if (aiSettings.systemPrompt) {
+    systemParts.push(aiSettings.systemPrompt);
+  }
+
+  let userPrompt = '';
+  if (mode === 'modify') {
+    userPrompt = `请根据以下需求修改 Mermaid 代码，并输出完整的新图表：\n需求：${promptBody || '优化图表排版与可读性'}\n\n当前 Mermaid 代码：\n${currentCode}`;
+  } else {
+    userPrompt = `请根据以下描述生成 Mermaid 架构图，优先使用 flowchart 或 C4 容器图：\n描述：${promptBody}\n\n请确保输出可直接渲染。`;
+  }
+
+  return {
+    model: aiSettings.model,
+    messages: [
+      { role: 'system', content: systemParts.join('\n') },
+      { role: 'user', content: userPrompt }
+    ],
+    temperature: 0.2
+  };
+}
+
+function extractAiContent(payload) {
+  if (!payload) return '';
+  if (Array.isArray(payload.choices) && payload.choices[0]) {
+    return payload.choices[0].message?.content || payload.choices[0].text || '';
+  }
+  if (payload.output_text) {
+    return payload.output_text;
+  }
+  if (payload.message?.content) {
+    return payload.message.content;
+  }
+  return '';
+}
+
+function extractMermaidCode(content) {
+  if (!content) return '';
+  const match = content.match(/```(?:mermaid)?\s*([\s\S]*?)```/i);
+  if (match) {
+    return match[1].trim();
+  }
+  return content.trim();
+}
+
+function applyMermaidCode(code) {
+  if (!code) return;
+  mermaidInput.value = code;
+  updateHighlight();
+  renderDiagram();
+}
+
+async function runAiTask(mode) {
+  if (!aiEndpointInput || !aiModelInput || !aiApiKeyInput) return;
+  syncAiSettingsFromForm();
+  const promptBody = promptBodyInput ? promptBodyInput.value.trim() : '';
+  if (!promptBody) {
+    updateAiStatus('请先填写提示词内容。', 'error');
+    return;
+  }
+  if (!aiSettings.endpoint || !aiSettings.model || !aiSettings.apiKey) {
+    updateAiStatus('请先补全 API 地址、模型名称和 API Key。', 'error');
+    return;
+  }
+  const currentCode = mermaidInput?.value || '';
+  const payload = buildAiRequestPayload(mode, promptBody, currentCode);
+  updateAiStatus('正在请求模型，请稍候...', 'info');
+
+  try {
+    const response = await fetch(aiSettings.endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${aiSettings.apiKey}`
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    const content = extractAiContent(data);
+    const mermaidCode = extractMermaidCode(content);
+    if (!mermaidCode) {
+      updateAiStatus('未能解析出 Mermaid 代码，请检查模型输出。', 'error');
+      return;
+    }
+    applyMermaidCode(mermaidCode);
+    updateAiStatus(mode === 'modify' ? '已更新 Mermaid 代码。' : '已生成 Mermaid 架构图。', 'success');
+  } catch (error) {
+    console.error('AI 请求失败：', error);
+    updateAiStatus(`AI 请求失败：${error.message || error}`, 'error');
+  }
+}
+
 function bindEvents() {
   if (renderButton) {
     renderButton.addEventListener('click', renderDiagram);
@@ -764,6 +1043,40 @@ function bindEvents() {
 
   if (scrollBottomButton) {
     scrollBottomButton.addEventListener('click', () => scrollPage('bottom'));
+  }
+
+  if (aiEndpointInput) {
+    aiEndpointInput.addEventListener('change', syncAiSettingsFromForm);
+  }
+  if (aiModelInput) {
+    aiModelInput.addEventListener('change', syncAiSettingsFromForm);
+  }
+  if (aiApiKeyInput) {
+    aiApiKeyInput.addEventListener('change', syncAiSettingsFromForm);
+  }
+  if (aiSystemPromptInput) {
+    aiSystemPromptInput.addEventListener('change', syncAiSettingsFromForm);
+  }
+  if (promptApplyButton) {
+    promptApplyButton.addEventListener('click', applySelectedPrompt);
+  }
+  if (promptSaveButton) {
+    promptSaveButton.addEventListener('click', savePromptTemplate);
+  }
+  if (promptDeleteButton) {
+    promptDeleteButton.addEventListener('click', deletePromptTemplate);
+  }
+  if (promptSelect) {
+    promptSelect.addEventListener('change', () => {
+      aiSettings.lastPromptId = promptSelect.value || null;
+      persistAiSettings();
+    });
+  }
+  if (aiModifyButton) {
+    aiModifyButton.addEventListener('click', () => runAiTask('modify'));
+  }
+  if (aiArchitectureButton) {
+    aiArchitectureButton.addEventListener('click', () => runAiTask('architecture'));
   }
 
   window.addEventListener('scroll', updateScrollControlsVisibility, { passive: true });

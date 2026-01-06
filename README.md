@@ -8,15 +8,16 @@
 - 🔁 **多版本切换**：读取 `mermaid-meta.json` 中的版本列表，前端可即时切换 Mermaid 内核并刷新当前图表。
 - 🛠️ **编辑体验**：提供语法高亮、行号/行数统计、实时光标行列定位、快捷渲染（Ctrl/⌘ + Enter）、字体同步机制以及更宽广的编辑面板与示例库一键载入。
 - 🖱️ **预览增强**：渲染结果面板支持缩放、平移、居中复位，默认将图表顶部居中展示，并可复制 PNG、导出 SVG/PNG。
+- 🤖 **AI 助手**：支持配置大模型 API/凭证与自定义提示词模板，在本地直接完成 Mermaid 代码自动修改与架构图生成。
 - ⏫ **快速定位**：浮动按钮支持一键跳转页面顶部/底部，长页面也能迅速回到编辑器或示例区。
 - 🔍 **语法校验**：渲染前自动调用 `mermaid.parse`，第一时间暴露语法错误并提示定位。
 - 🎨 **示例图库**：涵盖流程、时序、状态、旅程、甘特、类图、ER、Git Graph、饼图、折线/柱状/XY 图、思维导图、时间线、需求图、象限图、C4、桑基图等 16+ 彩色案例，全部通过 v11.12.1 语法校验。
 
 ## 本次更新亮点
 
-- ✍️ 修复语法高亮覆盖层与隐藏 textarea 字体参数不一致的问题，鼠标位置、选区与实际编辑的文本重新完全对齐。
-- 📏 新增 `syncEditorTypography` + `--editor-font-size` 组合机制，自动读取 textarea 的字体/行高并同步到高亮层与行号栏，长文档滚动时也不会再出现错位。
-- 📚 更新 README 的系统架构图、数据流图与调用图，记录字体同步阶段与其对编辑体验的守护逻辑。
+- 🤖 新增 AI 助手面板，可配置模型 API 地址、Key、模型名称与系统提示词，并直接在页面完成“修改当前图”或“生成架构图”。
+- 🧠 提示词模板支持本地保存/载入/删除，所有设置均存储在浏览器本地，保持离线体验与私密性。
+- 📚 更新 README 的系统架构图、数据流图、调用图与用户用例图，补充 AI 生成流程与本地提示词管理路径。
 
 ## 使用指南
 
@@ -71,6 +72,7 @@
    - 如有语法问题，错误信息会显示在预览区域顶部。
    - 支持语法高亮、行号/行数统计、光标行列提示、一键复制代码、复制 PNG、导出 SVG/PNG、版本切换，以及浅色/深色主题切换。
    - 预览面板内置缩放、平移与重置视图控制，帮助在大图场景下查看细节。
+   - AI 助手可配置模型 API 地址与 Key，并保存提示词模板，一键完成 Mermaid 代码优化或架构图生成。
 
 ## 内置示例一览
 
@@ -145,6 +147,15 @@ graph TD
   LayoutTuner --> Styles
   LayoutTuner --> ScrollControls[快速滚动控制<br/>scrollControls]
   ScrollControls --> SmoothScroll[平滑滚动器<br/>scrollPage]
+  App --> AiPanel[AI 助手面板]
+  AiPanel --> AiConfig[模型配置表单]
+  AiPanel --> PromptTemplates[提示词模板管理]
+  AiConfig --> LocalStore[浏览器本地存储<br/>localStorage]
+  PromptTemplates --> LocalStore
+  AiPanel --> AiRequester[AI 请求器<br/>runAiTask]
+  AiRequester --> AiParser[响应解析器<br/>extractMermaidCode]
+  AiParser --> Editor
+  AiRequester --> LlmApi[模型 API]
   Mermaid --> RenderPipeline[渲染流程<br/>mermaid.render]
   RenderPipeline --> SvgBuilder[SVG 构建器<br/>buildSvgElement]
   SvgBuilder --> NamespaceGuard[命名空间补全<br/>ensureSvgNamespaces]
@@ -215,6 +226,15 @@ flowchart LR
     ScrollControlsUI --> SmoothScrollDF[scrollPage 平滑滚动]
     SmoothScrollDF --> WindowScroll[window.scrollTo]
     WindowScroll --> LayoutMonitor
+    AiForm[AI 配置表单] --> AiSettingsStore[本地存储 localStorage]
+    AiTemplates[提示词模板] --> AiSettingsStore
+    AiTemplates --> PromptBody[提示词内容]
+    PromptBody --> AiRequest[AI 请求 payload]
+    EditorInput --> AiRequest
+    AiRequest -->|fetch| LlmApi[模型 API]
+    LlmApi --> AiResponse[模型响应]
+    AiResponse --> AiParser[Mermaid 代码解析]
+    AiParser --> EditorInput
   end
   Downloader[download-mermaid.cjs] -->|GitHub Release 优先| Github[mermaid.min.js]
   Downloader -->|CDN 回退| CDN[jsDelivr / unpkg]
@@ -238,12 +258,17 @@ graph TD
   bootstrap --> updateHighlight
   bootstrap --> syncTypography[syncEditorTypography]
   bootstrap --> setInitialExample
+  bootstrap --> aiInit[initializeAiAssistant]
   loadRegistry --> populateVersionSelect
   bind --> render[renderDiagram]
   bind --> copy[copyCode]
   bind --> download[downloadSvg]
   bind --> copyPng[copyDiagramImage]
   bind --> downloadPng[downloadPng]
+  bind --> aiModify[runAiTask]
+  bind --> aiApplyPrompt[applySelectedPrompt]
+  bind --> aiSavePrompt[savePromptTemplate]
+  bind --> aiDeletePrompt[deletePromptTemplate]
   bind --> applyTheme
   bind --> activate[activateMermaidPackage]
   bind --> updateHighlight
@@ -291,6 +316,15 @@ graph TD
   sanitizeSvg --> namespaceGuard
   svgToPng --> parseSize[parseSvgDimensions]
   parseSize --> sizeCalc
+  aiInit --> aiLoad[loadAiSettings]
+  aiInit --> aiForm[applyAiSettingsToForm]
+  aiInit --> aiPromptSelect[refreshPromptSelect]
+  aiModify --> aiPayload[buildAiRequestPayload]
+  aiModify --> aiFetch[fetch API]
+  aiFetch --> aiParse[extractMermaidCode]
+  aiParse --> applyCode[applyMermaidCode]
+  applyCode --> updateHighlight
+  applyCode --> render
   showMessage[showTempMessage] --> setStatus
   render --> showMessage
   download --> showMessage
@@ -322,6 +356,10 @@ flowchart TD
     UC12[查看光标所在行列]
     UC13[浏览多类型示例]
     UC14[一键跳转顶部/底部]
+    UC15[配置 AI API 与凭证]
+    UC16[保存/载入提示词模板]
+    UC17[AI 修改当前 Mermaid 图]
+    UC18[AI 生成架构图]
   end
   User --> UC1
   User --> UC2
@@ -337,6 +375,10 @@ flowchart TD
   User --> UC12
   User --> UC13
   User --> UC14
+  User --> UC15
+  User --> UC16
+  User --> UC17
+  User --> UC18
 ```
 
 ## 许可证

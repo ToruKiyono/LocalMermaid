@@ -77,6 +77,64 @@
         <div id="preview" class="preview-canvas"></div>
       </div>
     </section>
+    <section class="panel panel--ai" id="aiAssistant">
+      <div class="panel__header">
+        <h2>AI 助手</h2>
+        <div class="panel__actions">
+          <button type="button" id="aiModifyButton" class="btn btn--small">AI 修改当前图</button>
+          <button type="button" id="aiArchitectureButton" class="btn btn--small btn--ghost">AI 生成架构图</button>
+        </div>
+      </div>
+      <div class="panel__body ai-panel">
+        <div class="ai-section">
+          <h3>模型配置</h3>
+          <div class="ai-grid">
+            <label>
+              API 地址
+              <input type="url" id="aiEndpoint" placeholder="https://api.openai.com/v1/chat/completions" />
+            </label>
+            <label>
+              模型名称
+              <input type="text" id="aiModel" placeholder="gpt-4o-mini" />
+            </label>
+            <label class="ai-span-2">
+              API Key
+              <input type="password" id="aiApiKey" placeholder="sk-..." />
+            </label>
+            <label class="ai-span-2">
+              系统提示词（可选）
+              <textarea id="aiSystemPrompt" rows="3" placeholder="例如：你是 Mermaid 资深架构师..."></textarea>
+            </label>
+          </div>
+        </div>
+        <div class="ai-section">
+          <h3>提示词模板</h3>
+          <div class="ai-grid">
+            <label class="ai-span-2">
+              模板标题
+              <input type="text" id="promptTitle" placeholder="例如：电商系统架构" />
+            </label>
+            <label class="ai-span-2">
+              提示词内容（用于修改/生成）
+              <textarea id="promptBody" rows="6" placeholder="描述你的需求或系统结构..."></textarea>
+            </label>
+            <label>
+              已保存模板
+              <select id="promptSelect"></select>
+            </label>
+            <div class="ai-actions">
+              <button type="button" id="promptApplyButton" class="btn btn--small btn--ghost">载入模板</button>
+              <button type="button" id="promptSaveButton" class="btn btn--small">保存模板</button>
+              <button type="button" id="promptDeleteButton" class="btn btn--small btn--ghost">删除模板</button>
+            </div>
+          </div>
+        </div>
+        <div class="ai-section">
+          <h3>执行状态</h3>
+          <p id="aiStatus" class="ai-status">提示词与配置会保存在浏览器本地。</p>
+        </div>
+      </div>
+    </section>
   </main>
   <section class="examples" id="examples">
     <h2>内置示例</h2>

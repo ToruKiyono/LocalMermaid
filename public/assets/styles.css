@@ -160,6 +160,11 @@ a {
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
 }
 
+.panel__body {
+  padding: 1.25rem;
+  flex: 1;
+}
+
 .panel__header,
 .panel__footer {
   padding: 1rem 1.25rem;
@@ -191,6 +196,81 @@ a {
 .panel__actions--preview {
   align-items: center;
   gap: 0.75rem;
+}
+
+.panel--ai {
+  min-height: clamp(520px, 70vh, 860px);
+}
+
+.ai-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ai-section h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
+
+.ai-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 1rem 1.5rem;
+}
+
+.ai-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--color-subtle);
+}
+
+.ai-grid input,
+.ai-grid textarea,
+.ai-grid select {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: var(--card-soft);
+  padding: 0.7rem 0.9rem;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.ai-grid input:focus,
+.ai-grid textarea:focus,
+.ai-grid select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.ai-grid textarea {
+  resize: vertical;
+}
+
+.ai-span-2 {
+  grid-column: span 2;
+}
+
+.ai-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.ai-status {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: var(--card-soft);
+  color: var(--color-subtle);
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  min-height: 3rem;
 }
 
 .editor {
