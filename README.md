@@ -8,7 +8,7 @@
 - 🔁 **多版本切换**：读取 `mermaid-meta.json` 中的版本列表，前端可即时切换 Mermaid 内核并刷新当前图表。
 - 🛠️ **编辑体验**：提供语法高亮、行号/行数统计、实时光标行列定位、快捷渲染（Ctrl/⌘ + Enter）、字体同步机制以及更宽广的编辑面板与示例库一键载入。
 - 🖱️ **预览增强**：渲染结果面板支持缩放、平移、居中复位，默认将图表顶部居中展示，并可复制 PNG、导出 SVG/PNG。
-- 🤖 **AI 助手**：支持配置大模型 API/凭证与自定义提示词模板，并内置默认提示词，直接完成 Mermaid 代码自动修改与架构图生成；可在渲染报错时自动调用 AI 修复。
+- 🤖 **AI 助手**：编辑器前置一个轻量 AI 快速输入框，点击后展开输入；输入后按已配置模型自动回写 Mermaid，配置与模板在弹窗内维护，渲染报错时可自动调用 AI 修复。
 - 🧩 **CORS 处理**：内置本地代理模式，解决浏览器调用外部模型 API 的跨域问题。
 - ⏫ **快速定位**：浮动按钮支持一键跳转页面顶部/底部，长页面也能迅速回到编辑器或示例区。
 - 🔍 **语法校验**：渲染前自动调用 `mermaid.parse`，第一时间暴露语法错误并提示定位。
@@ -16,10 +16,9 @@
 
 ## 本次更新亮点
 
-- 🤖 新增 AI 自动修复开关与用户补充输入字段，渲染报错时可自动调用 AI 生成修复后的 Mermaid。
-- 🧩 本地代理模式支持绕过 CORS 限制，并保持 API Key 在本地传递。
-- 🧭 调整页面布局为“编辑/预览并列 + AI 面板全宽”的结构，减少视觉噪音并提升整体观感。
-- 📚 更新 README 的系统架构图、数据流图、调用图与用户用例图，补充 AI 自动修复、本地代理与布局栅格路径。
+- 🤖 AI 快速输入移动至编辑器之前，并改为聚焦后展开的轻量形态，减少占用空间。
+- 🧩 保留 AI 自动修复与本地代理模式，减少渲染失败与 CORS 阻断带来的影响。
+- 📚 更新 README 的系统架构图、数据流图、调用图与用户用例图，补充 AI 弹窗打开与关闭路径。
 
 ## 使用指南
 
@@ -74,6 +73,7 @@
    - 如有语法问题，错误信息会显示在预览区域顶部。
    - 支持语法高亮、行号/行数统计、光标行列提示、一键复制代码、复制 PNG、导出 SVG/PNG、版本切换，以及浅色/深色主题切换。
    - 预览面板内置缩放、平移与重置视图控制，帮助在大图场景下查看细节。
+   - AI 快速输入框常驻页面，输入需求即可调用已配置的模型并回写 Mermaid；如需修改 API 或模板，可点击“AI 助手”。
    - AI 助手可配置模型 API 地址与 Key，并保存提示词模板，一键完成 Mermaid 代码优化或架构图生成；支持渲染报错自动修复与用户补充输入。
    - 若遇到 CORS 报错，可勾选“通过本地代理请求”，并通过 `npm run start` 启动本地服务器使用代理转发。
 
@@ -154,7 +154,10 @@ graph TD
   LayoutTuner --> Styles
   LayoutTuner --> ScrollControls[快速滚动控制<br/>scrollControls]
   ScrollControls --> SmoothScroll[平滑滚动器<br/>scrollPage]
-  App --> AiPanel[AI 助手面板]
+  App --> AiQuickPanel[AI 快速输入面板<br/>聚焦展开]
+  AiQuickPanel --> AiRequester
+  App --> AiLauncher[AI 打开按钮]
+  AiLauncher --> AiPanel[AI 助手弹窗]
   AiPanel --> AiConfig[模型配置表单]
   AiPanel --> PromptTemplates[提示词模板管理]
   AiPanel --> AutoFixToggle[自动修复开关]
@@ -240,7 +243,11 @@ flowchart LR
     WindowScroll --> LayoutMonitor
     LayoutGridDF[布局栅格] --> EditorInput
     LayoutGridDF --> Preview
-    LayoutGridDF --> AiForm
+    LayoutGridDF --> AiQuickPanelDF[AI 快速输入<br/>聚焦展开]
+    AiQuickPanelDF --> AiRequest
+    LayoutGridDF --> AiLauncherDF[AI 打开按钮]
+    AiLauncherDF --> AiModalDF[AI 弹窗]
+    AiModalDF --> AiForm
     AiForm[AI 配置表单] --> AiSettingsStore[本地存储 localStorage]
     AiTemplates[提示词模板] --> AiSettingsStore
     AiSettingsStore --> DefaultPromptDF[默认提示词模板]
@@ -291,6 +298,10 @@ graph TD
   bind --> aiApplyPrompt[applySelectedPrompt]
   bind --> aiSavePrompt[savePromptTemplate]
   bind --> aiDeletePrompt[deletePromptTemplate]
+  bind --> openAiModal
+  bind --> closeAiModal
+  bind --> aiQuickModify[AI 快速修改按钮]
+  bind --> aiQuickGenerate[AI 快速生成按钮]
   bind --> aiAutoFixToggle[autoFix change handler]
   bind --> aiProxyToggle[proxy change handler]
   bind --> applyTheme
@@ -389,6 +400,9 @@ flowchart TD
     UC19[补充用户输入]
     UC20[开启自动修复]
     UC21[使用本地代理绕过 CORS]
+    UC22[打开 AI 弹窗]
+    UC23[关闭 AI 弹窗]
+    UC24[使用 AI 快速输入框（聚焦展开）]
   end
   User --> UC1
   User --> UC2
@@ -411,6 +425,9 @@ flowchart TD
   User --> UC19
   User --> UC20
   User --> UC21
+  User --> UC22
+  User --> UC23
+  User --> UC24
 ```
 
 ## 许可证

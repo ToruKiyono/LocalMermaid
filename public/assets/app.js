@@ -26,6 +26,13 @@ const zoomDisplay = document.getElementById('zoomDisplay');
 const scrollControls = document.getElementById('scrollControls');
 const scrollTopButton = document.getElementById('scrollTopButton');
 const scrollBottomButton = document.getElementById('scrollBottomButton');
+const openAiButton = document.getElementById('openAiButton');
+const closeAiButton = document.getElementById('closeAiButton');
+const aiModal = document.getElementById('aiModal');
+const aiModalOverlay = document.getElementById('aiModalOverlay');
+const aiQuickPrompt = document.getElementById('aiQuickPrompt');
+const aiQuickModifyButton = document.getElementById('aiQuickModifyButton');
+const aiQuickGenerateButton = document.getElementById('aiQuickGenerateButton');
 const aiModifyButton = document.getElementById('aiModifyButton');
 const aiArchitectureButton = document.getElementById('aiArchitectureButton');
 const aiEndpointInput = document.getElementById('aiEndpoint');
@@ -733,6 +740,27 @@ function updateScrollControlsVisibility() {
   }
 }
 
+function updateQuickPromptState() {
+  if (!aiQuickPrompt) return;
+  const container = aiQuickPrompt.closest('.ai-quick');
+  if (!container) return;
+  const hasFocus = document.activeElement === aiQuickPrompt;
+  container.classList.toggle('is-expanded', hasFocus);
+  container.classList.toggle('is-collapsed', !hasFocus);
+}
+
+function openAiModal() {
+  if (!aiModal) return;
+  aiModal.classList.add('is-open');
+  aiModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeAiModal() {
+  if (!aiModal) return;
+  aiModal.classList.remove('is-open');
+  aiModal.setAttribute('aria-hidden', 'true');
+}
+
 function initializeAiAssistant() {
   aiSettings = loadAiSettings();
   applyAiSettingsToForm(aiSettings);
@@ -968,7 +996,12 @@ function applyMermaidCode(code) {
 async function runAiTask(mode, options = {}) {
   if (!aiEndpointInput || !aiModelInput || !aiApiKeyInput) return;
   syncAiSettingsFromForm();
-  const promptBody = promptBodyInput ? promptBodyInput.value.trim() : '';
+  const promptBody =
+    options.promptOverride !== undefined
+      ? String(options.promptOverride).trim()
+      : promptBodyInput
+        ? promptBodyInput.value.trim()
+        : '';
   const extraInput = promptExtraInput ? promptExtraInput.value.trim() : '';
   if (!promptBody && mode !== 'auto-fix') {
     updateAiStatus('请先填写提示词内容。', 'error');
@@ -1111,6 +1144,38 @@ function bindEvents() {
 
   if (scrollBottomButton) {
     scrollBottomButton.addEventListener('click', () => scrollPage('bottom'));
+  }
+
+  if (openAiButton) {
+    openAiButton.addEventListener('click', openAiModal);
+  }
+  if (closeAiButton) {
+    closeAiButton.addEventListener('click', closeAiModal);
+  }
+  if (aiModalOverlay) {
+    aiModalOverlay.addEventListener('click', closeAiModal);
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeAiModal();
+    }
+  });
+  if (aiQuickModifyButton) {
+    aiQuickModifyButton.addEventListener('click', () => {
+      const prompt = aiQuickPrompt ? aiQuickPrompt.value : '';
+      runAiTask('modify', { promptOverride: prompt });
+    });
+  }
+  if (aiQuickGenerateButton) {
+    aiQuickGenerateButton.addEventListener('click', () => {
+      const prompt = aiQuickPrompt ? aiQuickPrompt.value : '';
+      runAiTask('architecture', { promptOverride: prompt });
+    });
+  }
+  if (aiQuickPrompt) {
+    updateQuickPromptState();
+    aiQuickPrompt.addEventListener('focus', updateQuickPromptState);
+    aiQuickPrompt.addEventListener('blur', updateQuickPromptState);
   }
 
   if (aiEndpointInput) {

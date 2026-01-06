@@ -144,8 +144,8 @@ a {
   display: grid;
   grid-template-columns: minmax(520px, 1fr) minmax(520px, 1fr);
   grid-template-areas:
-    "editor preview"
-    "ai ai";
+    "aiinput aiinput"
+    "editor preview";
   gap: 2.75rem;
   padding: 0 2.75rem 3.2rem;
   max-width: 1800px;
@@ -210,8 +210,12 @@ a {
   grid-area: preview;
 }
 
-.panel--ai {
-  grid-area: ai;
+.panel--ai-input {
+  grid-area: aiinput;
+}
+
+.panel--ai-input-inline {
+  min-height: auto;
 }
 
 .panel--ai {
@@ -297,10 +301,90 @@ a {
   .layout {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
+      "aiinput"
       "editor"
-      "preview"
-      "ai";
+      "preview";
   }
+}
+
+.ai-quick {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ai-quick__label {
+  color: var(--color-subtle);
+  font-size: 0.95rem;
+}
+
+.ai-quick textarea {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: var(--card-soft);
+  padding: 0.85rem 1rem;
+  color: var(--color-text);
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 88px;
+  transition: min-height var(--transition);
+}
+
+.ai-quick.is-collapsed textarea {
+  min-height: 52px;
+}
+
+.ai-quick.is-expanded textarea {
+  min-height: 160px;
+}
+
+.ai-quick textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.ai-quick__hint {
+  margin: 0;
+  color: var(--color-subtle);
+  font-size: 0.9rem;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+  z-index: 1500;
+}
+
+.modal.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.modal__content {
+  position: relative;
+  width: min(980px, 92vw);
+  max-height: min(90vh, 960px);
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.5);
+  z-index: 1;
+}
+
+.modal__content .panel__body {
+  overflow-y: auto;
 }
 
 .ai-status {

@@ -19,6 +19,22 @@
     </div>
   </header>
   <main class="layout">
+    <section class="panel panel--ai-input panel--ai-input-inline" id="aiQuickPanel">
+      <div class="panel__header">
+        <h2>AI 快速输入</h2>
+        <div class="panel__actions">
+          <button type="button" id="aiQuickModifyButton" class="btn btn--small">AI 修改当前图</button>
+          <button type="button" id="aiQuickGenerateButton" class="btn btn--small btn--ghost">AI 生成架构图</button>
+        </div>
+      </div>
+      <div class="panel__body ai-quick">
+        <label class="ai-quick__label" for="aiQuickPrompt">
+          输入需求后将按照已配置的 AI 参数调用，并自动回写 Mermaid 编辑器内容：
+        </label>
+        <textarea id="aiQuickPrompt" rows="2" placeholder="例如：把节点改成更简洁的中文描述，并补充数据流..."></textarea>
+        <p class="ai-quick__hint">提示：如需修改 API 地址、模型或提示词模板，请点击右侧“AI 助手”。</p>
+      </div>
+    </section>
     <section class="panel panel--editor" id="editor">
       <div class="panel__header">
         <h2>Mermaid 编辑器</h2>
@@ -51,6 +67,7 @@
       <div class="panel__header">
         <h2>渲染结果</h2>
         <div class="panel__actions panel__actions--preview">
+          <button type="button" id="openAiButton" class="btn btn--small">AI 助手</button>
           <button type="button" id="copyDiagramButton" class="btn btn--small btn--ghost">复制 PNG</button>
           <button type="button" id="downloadPngButton" class="btn btn--small btn--ghost">下载 PNG</button>
           <div class="zoom-controls" role="group" aria-label="缩放控制">
@@ -77,12 +94,16 @@
         <div id="preview" class="preview-canvas"></div>
       </div>
     </section>
-    <section class="panel panel--ai" id="aiAssistant">
+  </main>
+  <div class="modal" id="aiModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal__overlay" id="aiModalOverlay"></div>
+    <section class="panel panel--ai modal__content" id="aiAssistant" role="document" aria-label="AI 助手">
       <div class="panel__header">
         <h2>AI 助手</h2>
         <div class="panel__actions">
           <button type="button" id="aiModifyButton" class="btn btn--small">AI 修改当前图</button>
           <button type="button" id="aiArchitectureButton" class="btn btn--small btn--ghost">AI 生成架构图</button>
+          <button type="button" id="closeAiButton" class="btn btn--small btn--ghost">关闭</button>
         </div>
       </div>
       <div class="panel__body ai-panel">
@@ -147,7 +168,7 @@
         </div>
       </div>
     </section>
-  </main>
+  </div>
   <section class="examples" id="examples">
     <h2>内置示例</h2>
     <div class="examples__grid" id="examplesGrid"></div>
