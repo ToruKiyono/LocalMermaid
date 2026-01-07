@@ -29,7 +29,7 @@
   --token-string: #8f2d1d;
   --token-number: #5b3d91;
   --token-comment: #7a6b5b;
-  font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-family: "Source Serif 4", "Noto Serif SC", "Songti SC", "STSong", "Times New Roman", serif;
 }
 
 body[data-theme='dark'] {
@@ -65,7 +65,9 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at top, rgba(194, 146, 88, 0.2), transparent 65%),
+  background:
+    linear-gradient(180deg, rgba(255, 249, 238, 0.94), rgba(246, 238, 222, 0.9)),
+    radial-gradient(circle at top, rgba(194, 146, 88, 0.2), transparent 65%),
     radial-gradient(circle at bottom, rgba(168, 124, 85, 0.15), transparent 65%),
     var(--color-bg);
   color: var(--color-text);
@@ -92,6 +94,14 @@ a {
   backdrop-filter: blur(12px);
 }
 
+.hero--bar::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 6px;
+  background: linear-gradient(90deg, transparent, rgba(138, 90, 43, 0.4), transparent);
+}
+
 .hero__content {
   width: 100%;
   max-width: 1800px;
@@ -115,6 +125,13 @@ a {
   font-family: "Cormorant Garamond", "Songti SC", "STSong", "Times New Roman", serif;
 }
 
+.hero__title::after {
+  content: "✶";
+  font-size: 0.85rem;
+  opacity: 0.6;
+  margin-left: 0.25rem;
+}
+
 .hero__badge {
   display: inline-flex;
   align-items: center;
@@ -131,12 +148,6 @@ a {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-}
-
-.hero__actions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
   flex-wrap: wrap;
 }
 
@@ -147,7 +158,7 @@ a {
   padding: 0.7rem 1.5rem;
   border-radius: 999px;
   border: 1px solid transparent;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
+  background: linear-gradient(135deg, rgba(138, 90, 43, 0.9), rgba(111, 69, 31, 0.92));
   color: var(--color-button-text);
   font-weight: 600;
   cursor: pointer;
@@ -156,17 +167,17 @@ a {
 
 .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 12px 30px rgba(138, 90, 43, 0.25);
 }
 
 .btn--ghost {
   background: transparent;
-  border-color: rgba(148, 163, 184, 0.35);
+  border-color: rgba(162, 140, 105, 0.4);
   color: var(--color-text);
 }
 
 .btn--ghost:hover {
-  background: rgba(148, 163, 184, 0.18);
+  background: rgba(162, 140, 105, 0.18);
 }
 
 .btn--small {
@@ -187,6 +198,14 @@ a {
   align-items: start;
 }
 
+.layout::before {
+  content: "";
+  grid-column: 1 / -1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(138, 90, 43, 0.3), transparent);
+  margin-bottom: 0.5rem;
+}
+
 .panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -196,6 +215,16 @@ a {
   flex-direction: column;
   min-height: var(--panel-min-height);
   box-shadow: 0 18px 40px rgba(59, 43, 31, 0.18);
+  position: relative;
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: calc(var(--panel-radius) - 10px);
+  border: 1px solid rgba(162, 140, 105, 0.2);
+  pointer-events: none;
 }
 
 .panel__body {
@@ -230,6 +259,12 @@ a {
   font-size: 1.15rem;
   letter-spacing: 0.04em;
   font-family: "Cormorant Garamond", "Songti SC", "STSong", "Times New Roman", serif;
+}
+
+.panel__header h2::after {
+  content: "—";
+  margin-left: 0.5rem;
+  color: rgba(138, 90, 43, 0.6);
 }
 
 .panel__actions--preview {
@@ -790,12 +825,13 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  transition: transform var(--transition), border var(--transition);
+  transition: transform var(--transition), border var(--transition), box-shadow var(--transition);
 }
 
 .example-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: rgba(138, 90, 43, 0.45);
+  box-shadow: 0 14px 24px rgba(59, 43, 31, 0.14);
 }
 
 .example-card pre {
