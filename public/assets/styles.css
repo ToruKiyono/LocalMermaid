@@ -407,10 +407,23 @@ a {
   color: var(--color-text);
   font-size: 0.9rem;
   line-height: 1.4;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .ai-progress-card.is-visible {
-  display: block;
+  display: flex;
+}
+
+.ai-progress-card__close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
 }
 
 .modal {

@@ -32,6 +32,8 @@ const aiModal = document.getElementById('aiModal');
 const aiModalOverlay = document.getElementById('aiModalOverlay');
 const aiQuickPrompt = document.getElementById('aiQuickPrompt');
 const aiProgressCard = document.getElementById('aiProgressCard');
+const aiProgressText = document.getElementById('aiProgressText');
+const aiProgressClose = document.getElementById('aiProgressClose');
 const aiErrorCard = document.getElementById('aiErrorCard');
 const aiTestButton = document.getElementById('aiTestButton');
 const aiQuickFixButton = document.getElementById('aiQuickFixButton');
@@ -867,11 +869,15 @@ function showAiProgressCard(message) {
   if (!aiProgressCard) return;
   const text = message ? String(message).trim() : '';
   if (!text) {
-    aiProgressCard.textContent = '';
+    if (aiProgressText) {
+      aiProgressText.textContent = '';
+    }
     aiProgressCard.classList.remove('is-visible');
     return;
   }
-  aiProgressCard.textContent = text;
+  if (aiProgressText) {
+    aiProgressText.textContent = text;
+  }
   aiProgressCard.classList.add('is-visible');
 }
 
@@ -1225,6 +1231,11 @@ function bindEvents() {
     aiQuickGenerateButton.addEventListener('click', () => {
       const prompt = aiQuickPrompt ? aiQuickPrompt.value : '';
       runAiTask('architecture', { promptOverride: prompt });
+    });
+  }
+  if (aiProgressClose) {
+    aiProgressClose.addEventListener('click', () => {
+      showAiProgressCard('');
     });
   }
   if (aiQuickFixButton) {
