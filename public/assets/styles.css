@@ -383,6 +383,21 @@ a {
   font-size: 0.9rem;
 }
 
+.ai-error-card {
+  display: none;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.6);
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--color-danger);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.ai-error-card.is-visible {
+  display: block;
+}
+
 .modal {
   position: fixed;
   inset: 0;

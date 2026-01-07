@@ -9,6 +9,7 @@
 - 🛠️ **编辑体验**：提供语法高亮、行号/行数统计、实时光标行列定位、快捷渲染（Ctrl/⌘ + Enter）、字体同步机制以及更宽广的编辑面板与示例库一键载入。
 - 🖱️ **预览增强**：渲染结果面板支持缩放、平移、居中复位，默认将图表顶部居中展示，并可复制 PNG、导出 SVG/PNG。
 - 🤖 **AI 助手**：编辑器前置一个轻量 AI 快速输入框，点击后展开输入；支持测试 AI 接口、手动修复渲染与自动修复，修复时自动附带 Mermaid 版本信息，配置与模板在弹窗内维护，调用后自动回写 Mermaid。
+- 🧯 **错误提示**：AI 接口报错会在快速输入区显示错误卡片，方便排查网络或配置问题。
 - 🧭 **顶部导航**：更紧凑的顶部栏样式，减少空间占用并保持关键入口可见。
 - 🧩 **CORS 处理**：内置本地代理模式，解决浏览器调用外部模型 API 的跨域问题。
 - ⏫ **快速定位**：浮动按钮支持一键跳转页面顶部/底部，长页面也能迅速回到编辑器或示例区。
@@ -18,6 +19,7 @@
 ## 本次更新亮点
 
 - 🤖 AI 修复按钮移动到渲染结果区域，手动修复时自动携带 Mermaid 版本信息。
+- 🧯 AI 接口失败时展示错误提示卡片，避免失败信息被忽略。
 - 🧭 顶部区域改为导航条样式，减少视觉占用并提升页面聚焦。
 - 🧩 保留 AI 自动修复与本地代理模式，减少渲染失败与 CORS 阻断带来的影响。
 - 📚 更新 README 的系统架构图、数据流图、调用图与用户用例图，补充 AI 弹窗打开与关闭路径。
@@ -162,6 +164,7 @@ graph TD
   AiQuickPanel --> AiTest[接口可用性测试]
   App --> PreviewPanelFix[预览区 AI 修复按钮]
   PreviewPanelFix --> AiRequester
+  AiRequester --> AiErrorCard[AI 错误提示卡片]
   App --> AiLauncher[AI 打开按钮]
   AiLauncher --> AiPanel[AI 助手弹窗]
   AiPanel --> AiConfig[模型配置表单]
@@ -255,6 +258,7 @@ flowchart LR
     PreviewPanelDF[预览区] --> AiManualFixDF[手动修复]
     AiManualFixDF --> AiRequest
     HeaderBarDF[顶部导航栏] --> LayoutGridDF
+    AiRequest --> AiErrorCardDF[错误提示卡片]
     LayoutGridDF --> AiLauncherDF[AI 打开按钮]
     AiLauncherDF --> AiModalDF[AI 弹窗]
     AiModalDF --> AiForm
@@ -418,6 +422,7 @@ flowchart TD
     UC24[使用 AI 快速输入框（聚焦展开）]
     UC25[测试 AI 接口可用性]
     UC26[手动触发 AI 修复渲染]
+    UC27[查看 AI 接口报错卡片]
   end
   User --> UC1
   User --> UC2
@@ -445,6 +450,7 @@ flowchart TD
   User --> UC24
   User --> UC25
   User --> UC26
+  User --> UC27
 ```
 
 ## 许可证

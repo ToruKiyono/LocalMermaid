@@ -31,6 +31,7 @@ const closeAiButton = document.getElementById('closeAiButton');
 const aiModal = document.getElementById('aiModal');
 const aiModalOverlay = document.getElementById('aiModalOverlay');
 const aiQuickPrompt = document.getElementById('aiQuickPrompt');
+const aiErrorCard = document.getElementById('aiErrorCard');
 const aiTestButton = document.getElementById('aiTestButton');
 const aiQuickFixButton = document.getElementById('aiQuickFixButton');
 const aiQuickModifyButton = document.getElementById('aiQuickModifyButton');
@@ -849,6 +850,18 @@ function updateAiStatus(message, tone = 'neutral') {
   aiStatus.style.color = colorMap[tone] || '';
 }
 
+function showAiErrorCard(message) {
+  if (!aiErrorCard) return;
+  const text = message ? String(message).trim() : '';
+  if (!text) {
+    aiErrorCard.textContent = '';
+    aiErrorCard.classList.remove('is-visible');
+    return;
+  }
+  aiErrorCard.textContent = text;
+  aiErrorCard.classList.add('is-visible');
+}
+
 function handleRenderError(message) {
   if (!aiSettings || !aiSettings.autoFix) return;
   if (isAutoFixing) return;
@@ -1040,6 +1053,7 @@ async function runAiTask(mode, options = {}) {
     versionText
   );
   updateAiStatus(getAiStatusMessageForMode(mode), 'info');
+  showAiErrorCard('');
 
   const isProxy = Boolean(aiSettings.useProxy);
   const requestUrl = isProxy ? '/proxy' : aiSettings.endpoint;
@@ -1084,7 +1098,9 @@ async function runAiTask(mode, options = {}) {
     const corsHint = String(message).includes('CORS')
       ? '（可能是 CORS 限制，可勾选“通过本地代理请求”）'
       : '';
-    updateAiStatus(`AI 请求失败：${message}${corsHint}`, 'error');
+    const fullMessage = `AI 请求失败：${message}${corsHint}`;
+    updateAiStatus(fullMessage, 'error');
+    showAiErrorCard(fullMessage);
   } finally {
     if (mode === 'auto-fix') {
       isAutoFixing = false;
