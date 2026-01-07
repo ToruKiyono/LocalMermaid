@@ -8,13 +8,15 @@
   <script type="module" src="assets/app.js" defer></script>
 </head>
 <body>
-  <header class="hero">
+  <header class="hero hero--bar">
     <div class="hero__content">
-      <h1>Local Mermaid Studio</h1>
-      <p>在完全离线的环境下编写、渲染并调试 Mermaid 图表。</p>
+      <div class="hero__title">
+        <h1>Local Mermaid Studio</h1>
+        <span class="hero__badge">离线 Mermaid 工作台</span>
+      </div>
       <div class="hero__actions">
-        <a class="btn" href="#editor">开始绘制</a>
-        <a class="btn btn--ghost" href="#examples">查看示例</a>
+        <a class="btn btn--small" href="#editor">开始绘制</a>
+        <a class="btn btn--small btn--ghost" href="#examples">查看示例</a>
       </div>
     </div>
   </header>
@@ -23,6 +25,7 @@
       <div class="panel__header">
         <h2>AI 快速输入</h2>
         <div class="panel__actions">
+          <button type="button" id="aiTestButton" class="btn btn--small btn--ghost">测试 AI 接口</button>
           <button type="button" id="aiQuickModifyButton" class="btn btn--small">AI 修改当前图</button>
           <button type="button" id="aiQuickGenerateButton" class="btn btn--small btn--ghost">AI 生成架构图</button>
         </div>
@@ -68,6 +71,7 @@
         <h2>渲染结果</h2>
         <div class="panel__actions panel__actions--preview">
           <button type="button" id="openAiButton" class="btn btn--small">AI 助手</button>
+          <button type="button" id="aiQuickFixButton" class="btn btn--small btn--ghost">AI 修复渲染</button>
           <button type="button" id="copyDiagramButton" class="btn btn--small btn--ghost">复制 PNG</button>
           <button type="button" id="downloadPngButton" class="btn btn--small btn--ghost">下载 PNG</button>
           <div class="zoom-controls" role="group" aria-label="缩放控制">

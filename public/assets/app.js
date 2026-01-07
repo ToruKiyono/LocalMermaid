@@ -31,6 +31,8 @@ const closeAiButton = document.getElementById('closeAiButton');
 const aiModal = document.getElementById('aiModal');
 const aiModalOverlay = document.getElementById('aiModalOverlay');
 const aiQuickPrompt = document.getElementById('aiQuickPrompt');
+const aiTestButton = document.getElementById('aiTestButton');
+const aiQuickFixButton = document.getElementById('aiQuickFixButton');
 const aiQuickModifyButton = document.getElementById('aiQuickModifyButton');
 const aiQuickGenerateButton = document.getElementById('aiQuickGenerateButton');
 const aiModifyButton = document.getElementById('aiModifyButton');
@@ -931,7 +933,14 @@ function applySelectedPrompt() {
   updateAiStatus('模板已载入。', 'info');
 }
 
-function buildAiRequestPayload(mode, promptBody, currentCode, extraInput = '', errorMessage = '') {
+function buildAiRequestPayload(
+  mode,
+  promptBody,
+  currentCode,
+  extraInput = '',
+  errorMessage = '',
+  versionLabelText = ''
+) {
   const systemParts = [
     '你是资深 Mermaid 架构师与前端工程师。',
     '请只返回 Mermaid 代码，不要包含解释或 Markdown。'
@@ -944,7 +953,9 @@ function buildAiRequestPayload(mode, promptBody, currentCode, extraInput = '', e
   if (mode === 'modify') {
     userPrompt = `请根据以下需求修改 Mermaid 代码，并输出完整的新图表：\n需求：${promptBody || '优化图表排版与可读性'}\n\n当前 Mermaid 代码：\n${currentCode}`;
   } else if (mode === 'auto-fix') {
-    userPrompt = `请修复以下 Mermaid 渲染错误，并输出完整可用的 Mermaid 代码：\n渲染错误：${errorMessage || '未知错误'}\n\n当前 Mermaid 代码：\n${currentCode}`;
+    userPrompt = `请修复以下 Mermaid 渲染错误，并输出完整可用的 Mermaid 代码：\n渲染错误：${errorMessage || '未知错误'}\nMermaid 版本：${versionLabelText || '未知'}\n\n当前 Mermaid 代码：\n${currentCode}`;
+  } else if (mode === 'test') {
+    userPrompt = '请返回一个最简单可渲染的 Mermaid 图（例如 graph TD; A-->B）。';
   } else {
     userPrompt = `请根据以下描述生成 Mermaid 架构图，优先使用 flowchart 或 C4 容器图：\n描述：${promptBody}\n\n请确保输出可直接渲染。`;
   }
@@ -993,6 +1004,13 @@ function applyMermaidCode(code) {
   renderDiagram();
 }
 
+function getAiStatusMessageForMode(mode) {
+  if (mode === 'modify') return '正在请求 AI 修改 Mermaid，请稍候...';
+  if (mode === 'auto-fix') return '正在请求 AI 修复渲染错误，请稍候...';
+  if (mode === 'test') return '正在测试 AI 接口可用性...';
+  return '正在请求 AI 生成 Mermaid，请稍候...';
+}
+
 async function runAiTask(mode, options = {}) {
   if (!aiEndpointInput || !aiModelInput || !aiApiKeyInput) return;
   syncAiSettingsFromForm();
@@ -1012,14 +1030,16 @@ async function runAiTask(mode, options = {}) {
     return;
   }
   const currentCode = mermaidInput?.value || '';
+  const versionText = versionLabel ? versionLabel.textContent : '';
   const payload = buildAiRequestPayload(
     mode,
     promptBody,
     currentCode,
     extraInput,
-    options.errorMessage || ''
+    options.errorMessage || '',
+    versionText
   );
-  updateAiStatus('正在请求模型，请稍候...', 'info');
+  updateAiStatus(getAiStatusMessageForMode(mode), 'info');
 
   const isProxy = Boolean(aiSettings.useProxy);
   const requestUrl = isProxy ? '/proxy' : aiSettings.endpoint;
@@ -1053,7 +1073,9 @@ async function runAiTask(mode, options = {}) {
         ? '已更新 Mermaid 代码。'
         : mode === 'auto-fix'
           ? '已自动修复 Mermaid 代码。'
-          : '已生成 Mermaid 架构图。',
+          : mode === 'test'
+            ? 'AI 接口可用，已返回示例 Mermaid。'
+            : '已生成 Mermaid 架构图。',
       'success'
     );
   } catch (error) {
@@ -1170,6 +1192,17 @@ function bindEvents() {
     aiQuickGenerateButton.addEventListener('click', () => {
       const prompt = aiQuickPrompt ? aiQuickPrompt.value : '';
       runAiTask('architecture', { promptOverride: prompt });
+    });
+  }
+  if (aiQuickFixButton) {
+    aiQuickFixButton.addEventListener('click', () => {
+      const errorMessage = errorBox ? errorBox.textContent.trim() : '';
+      runAiTask('auto-fix', { errorMessage });
+    });
+  }
+  if (aiTestButton) {
+    aiTestButton.addEventListener('click', () => {
+      runAiTask('test', { promptOverride: '测试 AI 接口' });
     });
   }
   if (aiQuickPrompt) {
