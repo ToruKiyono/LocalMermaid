@@ -31,6 +31,7 @@ const closeAiButton = document.getElementById('closeAiButton');
 const aiModal = document.getElementById('aiModal');
 const aiModalOverlay = document.getElementById('aiModalOverlay');
 const aiQuickPrompt = document.getElementById('aiQuickPrompt');
+const aiProgressCard = document.getElementById('aiProgressCard');
 const aiErrorCard = document.getElementById('aiErrorCard');
 const aiTestButton = document.getElementById('aiTestButton');
 const aiQuickFixButton = document.getElementById('aiQuickFixButton');
@@ -862,6 +863,18 @@ function showAiErrorCard(message) {
   aiErrorCard.classList.add('is-visible');
 }
 
+function showAiProgressCard(message) {
+  if (!aiProgressCard) return;
+  const text = message ? String(message).trim() : '';
+  if (!text) {
+    aiProgressCard.textContent = '';
+    aiProgressCard.classList.remove('is-visible');
+    return;
+  }
+  aiProgressCard.textContent = text;
+  aiProgressCard.classList.add('is-visible');
+}
+
 function handleRenderError(message) {
   if (!aiSettings || !aiSettings.autoFix) return;
   if (isAutoFixing) return;
@@ -1052,7 +1065,9 @@ async function runAiTask(mode, options = {}) {
     options.errorMessage || '',
     versionText
   );
-  updateAiStatus(getAiStatusMessageForMode(mode), 'info');
+  const statusMessage = getAiStatusMessageForMode(mode);
+  updateAiStatus(statusMessage, 'info');
+  showAiProgressCard(statusMessage);
   showAiErrorCard('');
 
   const isProxy = Boolean(aiSettings.useProxy);
@@ -1092,6 +1107,7 @@ async function runAiTask(mode, options = {}) {
             : '已生成 Mermaid 架构图。',
       'success'
     );
+    showAiProgressCard('');
   } catch (error) {
     console.error('AI 请求失败：', error);
     const message = error.message || error;
@@ -1100,6 +1116,7 @@ async function runAiTask(mode, options = {}) {
       : '';
     const fullMessage = `AI 请求失败：${message}${corsHint}`;
     updateAiStatus(fullMessage, 'error');
+    showAiProgressCard('');
     showAiErrorCard(fullMessage);
   } finally {
     if (mode === 'auto-fix') {
