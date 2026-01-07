@@ -1,0 +1,14 @@
+{
+  "defaultVersion": "bundled-primary",
+  "packages": [
+    {
+      "id": "bundled-primary",
+      "label": "Mermaid v11.12.1（内置）",
+      "version": "11.12.1",
+      "scriptPath": "vendor/mermaid.min.js",
+      "source": "bundled",
+      "downloadUrl": "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.min.js",
+      "downloadedAt": "2025-11-06T12:27:59.986Z"
+    }
+  ]
+}
