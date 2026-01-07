@@ -6,14 +6,15 @@
 
 - 🚀 **开箱即用**：仓库自带 `public/vendor/mermaid.min.js`（当前为 v11.12.1）与版本清单，完全离线即可渲染。
 - 🔁 **多版本切换**：读取 `mermaid-meta.json` 中的版本列表，前端可即时切换 Mermaid 内核并刷新当前图表。
-- 🛠️ **编辑体验**：提供语法高亮、行号/行数统计、实时光标行列定位、快捷渲染（Ctrl/⌘ + Enter）、字体同步机制以及更宽广的编辑面板与示例库一键载入。
+- 🛠️ **编辑体验**：提供语法高亮、行号/行数统计、实时光标行列定位、快捷渲染（Ctrl/⌘ + Enter）、字体同步机制以及更宽广的编辑面板与示例弹窗一键载入。
 - 🖱️ **预览增强**：渲染结果面板支持缩放、平移、居中复位，默认将图表顶部居中展示，并可复制 PNG、导出 SVG/PNG。
 - 🤖 **AI 助手**：编辑器前置一个轻量 AI 快速输入框，点击后展开输入；支持测试 AI 接口、手动修复渲染与自动修复，修复时自动附带 Mermaid 版本信息，配置与模板在弹窗内维护，调用后自动回写 Mermaid。
 - 🧯 **错误提示**：AI 接口报错会在快速输入区显示错误卡片，方便排查网络或配置问题。
 - ⏳ **执行状态**：AI 请求中会显示状态卡片，用户可手动关闭，成功或失败后自动隐藏。
+- 🎻 **视觉风格**：采用更温润的古典配色与排版，增强留白与层次，整体更优雅。
 - 🧭 **顶部导航**：更紧凑的顶部栏样式，减少空间占用并保持关键入口可见。
 - 🧩 **CORS 处理**：内置本地代理模式，解决浏览器调用外部模型 API 的跨域问题。
-- ⏫ **快速定位**：浮动按钮支持一键跳转页面顶部/底部，长页面也能迅速回到编辑器或示例区。
+- ⏫ **快速定位**：浮动按钮支持一键跳转页面顶部/底部，长页面也能迅速回到编辑器或示例弹窗。
 - 🔍 **语法校验**：渲染前自动调用 `mermaid.parse`，第一时间暴露语法错误并提示定位。
 - 🎨 **示例图库**：涵盖流程、时序、状态、旅程、甘特、类图、ER、Git Graph、饼图、折线/柱状/XY 图、思维导图、时间线、需求图、象限图、C4、桑基图等 16+ 彩色案例，全部通过 v11.12.1 语法校验。
 
@@ -22,7 +23,7 @@
 - 🤖 AI 修复按钮移动到渲染结果区域，手动修复时自动携带 Mermaid 版本信息。
 - 🧯 AI 接口失败时展示错误提示卡片，避免失败信息被忽略。
 - ⏳ AI 请求中会展示执行状态卡片，支持手动关闭。
-- 🧭 顶部区域改为导航条样式，减少视觉占用并提升页面聚焦。
+- 🧭 顶部区域改为导航条样式，并整体采用古典风格配色与更宽松布局。
 - 🧩 保留 AI 自动修复与本地代理模式，减少渲染失败与 CORS 阻断带来的影响。
 - 📚 更新 README 的系统架构图、数据流图、调用图与用户用例图，补充 AI 弹窗打开与关闭路径。
 
@@ -80,6 +81,7 @@
    - 支持语法高亮、行号/行数统计、光标行列提示、一键复制代码、复制 PNG、导出 SVG/PNG、版本切换，以及浅色/深色主题切换。
    - 预览面板内置缩放、平移与重置视图控制，帮助在大图场景下查看细节。
    - AI 快速输入框常驻页面，输入需求即可调用已配置的模型并回写 Mermaid；如需修改 API 或模板，可点击“AI 助手”。
+   - 点击“查看示例/打开示例库”会弹出示例弹窗，可快速选中并载入示例。
    - AI 助手可配置模型 API 地址与 Key，并保存提示词模板，一键完成 Mermaid 代码优化或架构图生成；支持渲染报错自动修复与用户补充输入。
    - 若遇到 CORS 报错，可勾选“通过本地代理请求”，并通过 `npm run start` 启动本地服务器使用代理转发。
 
@@ -134,6 +136,7 @@ graph TD
   User[用户浏览器] -->|打开| Index[index.html]
   Index --> App[assets/app.js]
   Index --> HeaderBar[顶部导航栏]
+  App --> ClassicTheme[古典风格样式]
   App --> VersionManifest[版本清单<br/>vendor/mermaid-meta.json]
   App --> VersionSelect[版本选择器<br/>versionSelect]
   App --> Loader[动态脚本加载器]
@@ -151,8 +154,10 @@ graph TD
   App --> PanZoom[预览布局 & 平移缩放<br/>previewViewport]
   App --> LayoutTuner[工作区调优<br/>updateScrollControlsVisibility]
   App --> Examples[assets/examples.js<br/>示例集]
+  App --> ExamplesModal[示例弹窗]
+  ExamplesModal --> Gallery[16 类示例<br/>flowchart/xychart/C4...]
   Examples --> SyntaxAudit[语法校验（11.12.1）]
-  SyntaxAudit --> Gallery[16 类示例<br/>flowchart/xychart/C4...]
+  SyntaxAudit --> Gallery
   App --> Styles[assets/styles.css]
   App --> LayoutGrid[页面布局栅格<br/>grid-template-areas]
   LayoutGrid --> EditorPanel[编辑器面板]
@@ -238,9 +243,9 @@ flowchart LR
     CanvasSanitizerDF --> DataUriEncoderDF[数据 URI 编码]
     DataUriEncoderDF --> PngPipeline[SVG → PNG]
     PreviewSizerDF --> PngPipeline
-    Examples[示例库选择] --> ExampleValidator["示例语法校验 (11.12.1)"]
+    ExamplesModal[示例弹窗] --> ExampleValidator["示例语法校验 (11.12.1)"]
     ExampleValidator --> EditorInput
-    Examples --> GalleryBoard[图表示例卡片]
+    ExamplesModal --> GalleryBoard[图表示例卡片]
     EditorInput --> CursorTracker[光标位置计算]
     CursorTracker --> FooterStats[底部状态显示]
     OverlaySizer --> FooterStats
@@ -263,6 +268,7 @@ flowchart LR
     HeaderBarDF[顶部导航栏] --> LayoutGridDF
     AiRequest --> AiErrorCardDF[错误提示卡片]
     AiRequest --> AiProgressCardDF[执行状态卡片]
+    ClassicThemeDF[古典配色与排版] --> LayoutGridDF
     LayoutGridDF --> AiLauncherDF[AI 打开按钮]
     AiLauncherDF --> AiModalDF[AI 弹窗]
     AiModalDF --> AiForm
@@ -322,7 +328,10 @@ graph TD
   bind --> aiQuickGenerate[AI 快速生成按钮]
   bind --> aiQuickFix[预览区 AI 修复按钮]
   bind --> aiTest[AI 接口测试按钮]
+  bind --> openExamplesModal
+  bind --> closeExamplesModal
   bootstrap --> headerReady[顶部导航渲染]
+  bootstrap --> themeReady[古典主题样式载入]
   bind --> aiAutoFixToggle[autoFix change handler]
   bind --> aiProxyToggle[proxy change handler]
   bind --> applyTheme
@@ -400,7 +409,7 @@ graph TD
 flowchart TD
   User((用户))
   subgraph LocalMermaid[LocalMermaid 工作台]
-    UC1[选择预置示例]
+    UC1[打开示例弹窗并选择示例]
     UC2[编辑并渲染 Mermaid 图]
     UC3[查看渲染错误提示]
     UC4[复制当前代码]
@@ -412,7 +421,7 @@ flowchart TD
     UC10[缩放/平移预览图]
     UC11[查看行号与行数]
     UC12[查看光标所在行列]
-    UC13[浏览多类型示例]
+    UC13[浏览多类型示例（弹窗）]
     UC14[一键跳转顶部/底部]
     UC15[配置 AI API 与凭证]
     UC16[保存/载入提示词模板]

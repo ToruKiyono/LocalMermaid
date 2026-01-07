@@ -16,7 +16,7 @@
       </div>
       <div class="hero__actions">
         <a class="btn btn--small" href="#editor">开始绘制</a>
-        <a class="btn btn--small btn--ghost" href="#examples">查看示例</a>
+        <button type="button" class="btn btn--small btn--ghost open-examples-button">查看示例</button>
       </div>
     </div>
   </header>
@@ -65,8 +65,7 @@
         </div>
       </div>
       <div class="panel__footer">
-        <label for="exampleSelect">快速载入示例：</label>
-        <select id="exampleSelect"></select>
+        <button type="button" class="btn btn--small btn--ghost open-examples-button">打开示例库</button>
         <span id="cursorPositionLabel" class="line-count line-count--cursor">光标：第 1 行，第 1 列</span>
         <span id="lineCountLabel" class="line-count">行数：1</span>
       </div>
@@ -178,10 +177,20 @@
       </div>
     </section>
   </div>
-  <section class="examples" id="examples">
-    <h2>内置示例</h2>
-    <div class="examples__grid" id="examplesGrid"></div>
-  </section>
+  <div class="modal" id="examplesModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal__overlay" id="examplesModalOverlay"></div>
+    <section class="panel panel--examples modal__content" id="examplesPanel" role="document" aria-label="内置示例">
+      <div class="panel__header">
+        <h2>内置示例</h2>
+        <div class="panel__actions">
+          <button type="button" id="closeExamplesButton" class="btn btn--small btn--ghost">关闭</button>
+        </div>
+      </div>
+      <div class="panel__body">
+        <div class="examples__grid" id="examplesGrid"></div>
+      </div>
+    </section>
+  </div>
   <footer class="footer">
     <p>Mermaid 最新版本离线体验站 · <span id="versionLabel">版本：未知</span></p>
   </footer>

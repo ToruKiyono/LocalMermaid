@@ -9,7 +9,10 @@ const downloadPngButton = document.getElementById('downloadPngButton');
 const preview = document.getElementById('preview');
 const previewViewport = document.getElementById('previewViewport');
 const errorBox = document.getElementById('errorBox');
-const exampleSelect = document.getElementById('exampleSelect');
+const openExamplesButtons = document.querySelectorAll('.open-examples-button');
+const closeExamplesButton = document.getElementById('closeExamplesButton');
+const examplesModal = document.getElementById('examplesModal');
+const examplesModalOverlay = document.getElementById('examplesModalOverlay');
 const examplesGrid = document.getElementById('examplesGrid');
 const themeToggle = document.getElementById('themeToggle');
 const themeLabel = document.getElementById('themeLabel');
@@ -140,7 +143,6 @@ async function bootstrap() {
   }
   updateThemeLabel();
 
-  populateExampleSelect();
   populateExampleGrid();
   bindEvents();
   syncEditorTypography();
@@ -440,15 +442,16 @@ function updateVersionLabel() {
   versionLabel.textContent = parts.join(' · ');
 }
 
-function populateExampleSelect() {
-  if (!exampleSelect) return;
-  exampleSelect.innerHTML = '';
-  examples.forEach((example, index) => {
-    const option = document.createElement('option');
-    option.value = example.id;
-    option.textContent = `${index + 1}. ${example.name}`;
-    exampleSelect.appendChild(option);
-  });
+function openExamplesModal() {
+  if (!examplesModal) return;
+  examplesModal.classList.add('is-open');
+  examplesModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeExamplesModal() {
+  if (!examplesModal) return;
+  examplesModal.classList.remove('is-open');
+  examplesModal.setAttribute('aria-hidden', 'true');
 }
 
 function populateExampleGrid() {
@@ -465,7 +468,7 @@ function populateExampleGrid() {
     `;
     card.querySelector('button').addEventListener('click', () => {
       loadExample(example.id);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      closeExamplesModal();
     });
     examplesGrid.appendChild(card);
   });
@@ -482,9 +485,6 @@ function loadExample(id) {
   const example = examples.find((item) => item.id === id);
   if (!example) return;
   mermaidInput.value = example.code;
-  if (exampleSelect) {
-    exampleSelect.value = id;
-  }
   updateHighlight();
   renderDiagram();
 }
@@ -1157,10 +1157,16 @@ function bindEvents() {
     resetViewButton.addEventListener('click', () => resetView(true));
   }
 
-  if (exampleSelect) {
-    exampleSelect.addEventListener('change', (event) => {
-      loadExample(event.target.value);
+  if (openExamplesButtons.length) {
+    openExamplesButtons.forEach((button) => {
+      button.addEventListener('click', openExamplesModal);
     });
+  }
+  if (closeExamplesButton) {
+    closeExamplesButton.addEventListener('click', closeExamplesModal);
+  }
+  if (examplesModalOverlay) {
+    examplesModalOverlay.addEventListener('click', closeExamplesModal);
   }
 
   mermaidInput.addEventListener('keydown', (event) => {
@@ -1219,6 +1225,7 @@ function bindEvents() {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeAiModal();
+      closeExamplesModal();
     }
   });
   if (aiQuickModifyButton) {
