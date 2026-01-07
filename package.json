@@ -1,0 +1,15 @@
+{
+  "name": "localmermaid",
+  "version": "1.0.0",
+  "description": "Local offline Mermaid renderer with examples.",
+  "main": "index.js",
+  "scripts": {
+    "fetch:mermaid": "node scripts/download-mermaid.cjs",
+    "start": "node scripts/serve.cjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
