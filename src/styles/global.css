@@ -1,0 +1,59 @@
+:root {
+  color-scheme: light;
+  --app-bg: #f4f6fb;
+  --panel-bg: #ffffff;
+  --panel-border: rgba(15, 23, 42, 0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --accent: #1677ff;
+  --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --app-bg: #0b1220;
+  --panel-bg: #0f172a;
+  --panel-border: rgba(148, 163, 184, 0.2);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5f5;
+  --accent: #4f9bff;
+  --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', 'PingFang SC', sans-serif;
+  background: var(--app-bg);
+  color: var(--text-primary);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.ant-modal-content,
+.ant-select-dropdown,
+.ant-tooltip-inner,
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-btn,
+.ant-select-selector,
+.ant-switch {
+  border-radius: 10px;
+}
+
+.ant-modal-header {
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.ant-modal-title {
+  color: var(--text-primary);
+}
+
+.ant-select-selector {
+  background: var(--panel-bg) !important;
+}
