@@ -40,6 +40,21 @@
    - 默认读取 `public/vendor/mermaid-meta.json`。
    - 若需升级 Mermaid 版本，可运行 `npm run fetch:mermaid` 并更新版本清单。
 
+## 常见问题排查
+
+### Windows 上安装后运行 `npm run dev` 报错 `@rollup/rollup-win32-x64-msvc`
+
+该错误通常出现在 npm 处理 optionalDependencies 时发生。请按以下步骤恢复：
+
+1. 删除 `node_modules` 目录。
+2. 重新执行：
+
+   ```bash
+   npm install
+   ```
+
+若仍失败，可再执行一次 `npm install`。这是 npm 在 optionalDependencies 处理上的已知问题。
+
 ## 项目结构
 
 ```
