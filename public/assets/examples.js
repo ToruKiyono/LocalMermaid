@@ -1,5 +1,12 @@
 export const examples = [
   {
+    id: 'flowchart-basic',
+    name: '✨ 基础流程：开始-结束',
+    description: '最小化的 Mermaid 流程图示例，确保开箱即用。',
+    code: `graph TD
+    A[开始] --> B[结束]`
+  },
+  {
     id: 'flowchart-growth',
     name: '🧭 流程图：全链路增长实验',
     description: '覆盖拉新、激活与转化的彩色流程图，展示不同路径的策略。',

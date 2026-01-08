@@ -992,7 +992,7 @@ function buildAiRequestPayload(
   if (mode === 'modify') {
     userPrompt = `请根据以下需求修改 Mermaid 代码，并输出完整的新图表：\n需求：${promptBody || '优化图表排版与可读性'}\n\n当前 Mermaid 代码：\n${currentCode}`;
   } else if (mode === 'auto-fix') {
-    userPrompt = `请修复以下 Mermaid 渲染错误，并输出完整可用的 Mermaid 代码：\n渲染错误：${errorMessage || '未知错误'}\nMermaid 版本：${versionLabelText || '未知'}\n\n当前 Mermaid 代码：\n${currentCode}`;
+    userPrompt = `请修复以下 Mermaid 渲染错误，并输出完整可用的 Mermaid 代码：\n渲染错误：${errorMessage || '未知错误'}\nMermaid 版本：${versionLabelText || '未知'}\n\n修复要求：\n1) 严格遵守当前 Mermaid 版本支持的语法与关键字。\n2) 检查并补全缺失的 end、括号或块结构，避免缩进/分支错误。\n3) 若当前图类型不被该版本支持，请转换为等价的 flowchart 并保留含义。\n4) 保留原始语义与节点命名，尽量少改动非错误部分。\n\n当前 Mermaid 代码：\n${currentCode}`;
   } else if (mode === 'test') {
     userPrompt = '请返回一个最简单可渲染的 Mermaid 图（例如 graph TD; A-->B）。';
   } else {

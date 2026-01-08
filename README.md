@@ -27,6 +27,7 @@
 - 🧩 保留 AI 自动修复与本地代理模式，减少渲染失败与 CORS 阻断带来的影响。
 - 📚 更新 README 的系统架构图、数据流图、调用图与用户用例图，补充 AI 弹窗打开与关闭路径。
 - 🔢 修复超长 Mermaid 文档的行号显示问题，确保 300 行以上也能完整呈现。
+- 🛠️ 强化 AI 修复提示，确保根据当前 Mermaid 版本修复缺失 end 等语法错误，并在必要时转换为兼容图类型。
 
 ## 使用指南
 
@@ -174,6 +175,7 @@ graph TD
   PreviewPanelFix --> AiRequester
   AiRequester --> AiErrorCard[AI 错误提示卡片]
   AiRequester --> AiProgressCard[AI 状态卡片<br/>请求/成功/失败]
+  AiRequester --> AiFixPolicy[版本兼容修复规则]
   App --> AiLauncher[AI 打开按钮]
   AiLauncher --> AiPanel[AI 助手弹窗]
   AiPanel --> AiConfig[模型配置表单]
@@ -269,6 +271,7 @@ flowchart LR
     HeaderBarDF[顶部导航栏] --> LayoutGridDF
     AiRequest --> AiErrorCardDF[错误提示卡片]
     AiRequest --> AiProgressCardDF[执行状态卡片<br/>请求/成功/失败]
+    AiRequest --> AiFixPolicyDF[版本兼容修复规则]
     ClassicThemeDF[古典配色与排版] --> LayoutGridDF
     LayoutGridDF --> AiLauncherDF[AI 打开按钮]
     AiLauncherDF --> AiModalDF[AI 弹窗]
@@ -305,7 +308,6 @@ flowchart LR
 ```mermaid
 graph TD
   bootstrap --> loadRegistry[loadMermaidRegistry]
-  bootstrap --> populateSelect[populateExampleSelect]
   bootstrap --> populateGrid[populateExampleGrid]
   bootstrap --> bind[bindEvents]
   bootstrap --> updateHighlight
@@ -319,7 +321,6 @@ graph TD
   bind --> download[downloadSvg]
   bind --> copyPng[copyDiagramImage]
   bind --> downloadPng[downloadPng]
-  bind --> aiModify[runAiTask]
   bind --> aiApplyPrompt[applySelectedPrompt]
   bind --> aiSavePrompt[savePromptTemplate]
   bind --> aiDeletePrompt[deletePromptTemplate]
@@ -387,8 +388,8 @@ graph TD
   aiInit --> aiForm[applyAiSettingsToForm]
   aiInit --> aiPromptSelect[refreshPromptSelect]
   aiLoad --> aiDefaults[DEFAULT_AI_SETTINGS]
-  aiModify --> aiPayload[buildAiRequestPayload]
-  aiModify --> aiFetch[fetch API]
+  aiQuickModify --> aiPayload[buildAiRequestPayload]
+  aiQuickModify --> aiFetch[fetch API]
   aiFetch --> aiParse[extractMermaidCode]
   aiParse --> applyCode[applyMermaidCode]
   applyCode --> updateHighlight
