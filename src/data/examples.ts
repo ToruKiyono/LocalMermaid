@@ -1,4 +1,11 @@
-export const examples = [
+export interface MermaidExample {
+  id: string;
+  name: string;
+  description: string;
+  code: string;
+}
+
+export const examples: MermaidExample[] = [
   {
     id: 'flowchart-basic',
     name: '✨ 基础流程：开始-结束',
@@ -198,173 +205,154 @@ gitGraph
     commit id: "UI 原型"
     checkout feature/api
     commit id: "接入鉴权"
-    checkout main
-    merge feature/api tag: "v0.5.0"
     checkout feature/ui
-    commit id: "引入主题切换"
+    commit id: "补充组件"
     checkout main
-    merge feature/ui tag: "v1.0.0"
-    commit id: "部署上线"`
+    merge feature/api tag: "v1.0.0"
+    merge feature/ui
+    commit id: "热修复"`
   },
   {
     id: 'pie-channel',
     name: '🌍 Pie Chart：渠道构成',
-    description: '展示多渠道转化贡献的多彩饼图。',
-    code: `%%{init: {'themeVariables': {'pie1': '#38bdf8', 'pie2': '#f472b6', 'pie3': '#facc15', 'pie4': '#34d399'}}}%%
-pie showData
-    title 2024 年渠道贡献
-    "付费推广" : 32
-    "内容营销" : 24
-    "合作伙伴" : 18
-    "口碑推荐" : 26`
+    description: '饼图展示增长渠道的占比结构。',
+    code: `%%{init: {'themeVariables': {'pieSectionTextSize': '14px'}}}%%
+pie title 渠道贡献
+    "自然流量" : 45
+    "内容营销" : 25
+    "社交转化" : 15
+    "渠道投放" : 15`
   },
   {
-    id: 'line-activation',
-    name: '📈 Line Chart：活跃趋势',
-    description: '双折线对比产品活跃与留存的趋势图。',
-    code: `%%{init: {'xyChart': {'plotColorPalette': '#38bdf8,#facc15'}}}%%
-xychart
-    title "月度活跃与留存"
-    x-axis ["2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4"]
-    y-axis "指标 (%)" 40 --> 90
-    line "活跃率" [62, 68, 74, 81]
-    line "留存率" [54, 59, 63, 70]`
+    id: 'line-active',
+    name: '📈 折线图：活跃趋势',
+    description: '多指标折线趋势图。',
+    code: `xychart-beta
+    title "活跃趋势"
+    x-axis [周一, 周二, 周三, 周四, 周五, 周六, 周日]
+    y-axis "活跃数" 0 --> 300
+    line "活跃用户" [120, 180, 210, 260, 240, 200, 150]
+    line "付费用户" [40, 60, 80, 120, 110, 90, 50]`
   },
   {
     id: 'bar-conversion',
-    name: '📊 Bar Chart：渠道转化率',
-    description: '横向条形图对比不同渠道转化率，突出重点颜色。',
-    code: `%%{init: {'xyChart': {'plotColorPalette': '#38bdf8,#f97316'}}}%%
-xychart horizontal
-    title "Q2 渠道转化率"
-    x-axis ["广告投放", "社区运营", "邮件营销", "合作伙伴"]
-    y-axis "转化率 (%)" 0 --> 50
-    bar "渠道转化" [42, 35, 28, 24]`
+    name: '📊 柱状图：渠道转化率',
+    description: '柱状图对比不同渠道转化率。',
+    code: `xychart-beta
+    title "渠道转化率"
+    x-axis [官网, 内容, 广告, 推荐]
+    y-axis "转化率" 0 --> 100
+    bar "转化率" [68, 52, 74, 88]`
   },
   {
-    id: 'plot-xy',
+    id: 'xy-retention',
     name: '📈 XY Chart：转化 vs 留存',
-    description: '折线与柱状组合呈现渠道表现与目标对比。',
-    code: `%%{init: {'xyChart': {'plotColorPalette': '#38bdf8,#f97316,#22c55e'}}}%%
-xychart
-    title "渠道表现对比"
-    x-axis ["广告投放", "社区运营", "邮件营销", "合作伙伴", "增长实验"]
-    y-axis "指标 (%)" 0 --> 100
-    bar "转化率" [42, 35, 28, 24, 30]
-    line "留存率" [58, 64, 70, 75, 68]
-    line "满意度" [72, 78, 82, 84, 80]`
+    description: '双变量对比转化与留存。',
+    code: `xychart-beta
+    title "转化 vs 留存"
+    x-axis "转化率" 0 --> 100
+    y-axis "留存率" 0 --> 100
+    scatter "渠道" [25, 40] [45, 65] [70, 80] [90, 60]`
   },
   {
-    id: 'mindmap-planning',
+    id: 'mindmap-plan',
     name: '🧠 Mindmap：项目规划',
-    description: '绿色思维导图拆解目标、关键结果与策略。',
+    description: '思维导图梳理项目规划。',
     code: `mindmap
-      root((项目启动))
-        目标
-          提升用户活跃
-          降低流失率
-        关键结果
-          日活提升20%
-          续费率提升15%
-        策略
-          产品体验优化
-            调整信息架构
-            引入新手引导
-          精准运营
-            增加触达渠道
-            自动化运营流程`
+  root((产品规划))
+    需求收集
+      用户访谈
+      行业调研
+    方案设计
+      交互原型
+      体验验证
+    项目推进
+      开发排期
+      测试发布`
   },
   {
-    id: 'timeline-rollout',
+    id: 'timeline-release',
     name: '🗂️ Timeline：发布计划',
-    description: '时间线梳理彩色的版本发布与关键活动节点。',
-    code: `%%{init: {'themeVariables': {'timelineSectionBkgColor': '#f1f5f9', 'timelineSectionHeaderColor': '#38bdf8'}}}%%
-timeline
-    title LocalMermaid 发布节奏
-    2025-01-08 : 梳理需求与原型
-    2025-01-22 : 样式与交互定稿
-    2025-02-05 : 加入版本切换
-    2025-02-19 : 扩展图表示例库
-    2025-03-05 : 支持导出 PNG
-    2025-03-19 : 发布离线安装包`
+    description: '时间线描述多个里程碑。',
+    code: `timeline
+    title 产品发布计划
+    2025-01 : 版本规划
+    2025-02 : 功能开发
+    2025-03 : 灰度上线
+    2025-04 : 全量发布`
   },
   {
-    id: 'requirement-suite',
+    id: 'requirement-trace',
     name: '🔄 Requirement Diagram：需求追踪',
-    description: '需求、测试与实现之间的满足关系示意图。',
+    description: '需求图展示用户故事与系统能力。',
     code: `requirementDiagram
-    requirement UI_Highlight {
-      id: "R-UI-001"
-      text: "语法高亮清晰可读"
-      risk: medium
-      verifymethod: inspection
-    }
-    performanceRequirement Render_Perf {
-      id: "R-PERF-002"
-      text: "离线渲染耗时低于一秒"
+    requirement 用户身份校验 {
+      id: 1
+      text: 支持单点登录
       risk: high
       verifymethod: test
     }
-    element EditorSurface {
-      type: "UI 组件"
-      docRef: "docs/editor.md"
+    functionalRequirement 登录流程 {
+      id: 2
+      text: 第三方登录
+      risk: medium
+      verifymethod: inspection
     }
-    element RenderBench {
-      type: "自动化测试"
-      docRef: "qa/render-benchmark"
+    interfaceRequirement 认证服务 {
+      id: 3
+      text: 对接 OAuth
+      risk: high
+      verifymethod: analysis
     }
-    EditorSurface - satisfies -> UI_Highlight
-    RenderBench - verifies -> Render_Perf
-    UI_Highlight - traces -> Render_Perf`
+    用户身份校验 - verifies -> 登录流程
+    登录流程 - satisfies -> 认证服务`
   },
   {
     id: 'quadrant-priority',
     name: '🧭 Quadrant Chart：优先级矩阵',
-    description: '高亮不同特性的价值与复杂度分布。',
+    description: '象限图呈现任务价值与成本。',
     code: `quadrantChart
-    title "Priority Quadrant"
-    x-axis Low Value --> High Value
-    y-axis Low Complexity --> High Complexity
-    quadrant-1 "快速获益"
-    quadrant-2 "长线投资"
-    quadrant-3 "观察跟进"
-    quadrant-4 "谨慎投入"
-    "可视化导出" : [0.82, 0.35]
-    "多版本切换" : [0.74, 0.58]
-    "团队协作" : [0.62, 0.82]
-    "实时协同" : [0.9, 0.9]
-    "模板市场" : [0.48, 0.52]`
+    title 优先级矩阵
+    x-axis 低成本 --> 高成本
+    y-axis 低价值 --> 高价值
+    quadrant-1 高价值低成本
+    quadrant-2 高价值高成本
+    quadrant-3 低价值低成本
+    quadrant-4 低价值高成本
+    A[体验优化] : [0.2, 0.8]
+    B[支付升级] : [0.7, 0.9]
+    C[报表重构] : [0.6, 0.4]
+    D[旧功能维护] : [0.2, 0.3]`
   },
   {
-    id: 'c4-architecture',
-    name: '⚙️ C4 Diagram：系统容器视图',
-    description: 'C4 容器图突出前端、API 与存储之间的数据流。',
-    code: `%%{init: {'theme': 'forest'}}%%
-C4Container
-    title LocalMermaid 架构
-    Person(user, "终端用户", "在浏览器中编辑 Mermaid")
-    Person(admin, "管理员", "维护示例与版本")
-    System_Boundary(saas, "LocalMermaid") {
-      Container(web, "Web 前端", "HTML + JS", "渲染编辑器与预览")
-      Container(api, "API 服务", "Node.js", "提供示例与版本管理 API")
-      ContainerDb(db, "存储", "SQLite", "持久化示例模板")
+    id: 'c4-container',
+    name: '⚙️ C4：系统容器视图',
+    description: '容器级别展示核心服务与依赖。',
+    code: `C4Container
+    title 系统容器视图
+    Person(user, "用户")
+    System_Boundary(system, "SaaS 平台") {
+      Container(web, "Web 前端", "React", "界面交互")
+      Container(api, "API 服务", "Node.js", "核心业务逻辑")
+      ContainerDb(db, "数据库", "PostgreSQL", "业务数据")
     }
-    Rel(user, web, "编辑与渲染图表", "HTTPS")
-    Rel(admin, web, "上传示例", "HTTPS")
-    Rel(web, api, "拉取示例数据", "HTTPS")
-    Rel(api, db, "读写配置", "SQL")`
+    System_Ext(auth, "统一认证")
+
+    Rel(user, web, "使用")
+    Rel(web, api, "调用")
+    Rel(api, db, "读写")
+    Rel(api, auth, "鉴权")`
   },
   {
     id: 'sankey-funnel',
-    name: '📊 Sankey Diagram：漏斗流向',
-    description: 'Sankey 图展示用户在不同阶段的能量流转。',
+    name: '📊 Sankey：漏斗流向',
+    description: '桑基图描述转化流失。',
     code: `sankey
-
-Traffic_In,Landing_Page,1200
-Landing_Page,Signup,760
-Signup,Activation,540
-Activation,Subscribed,310
-Signup,Drop_Trial,120
-Activation,Extended_Trial,90`
+    title 产品转化漏斗
+    "访问" [300] "注册"
+    "注册" [180] "试用"
+    "试用" [120] "付费"
+    "注册" [40] "流失"
+    "试用" [20] "流失"`
   }
 ];
