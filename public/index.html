@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Mermaid Studio</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script type="module" src="assets/app.js" defer></script>
+</head>
+<body>
+  <header class="hero hero--bar">
+    <div class="hero__content">
+      <div class="hero__title">
+        <h1>Local Mermaid Studio</h1>
+        <span class="hero__badge">离线 Mermaid 工作台</span>
+      </div>
+      <div class="hero__actions">
+        <a class="btn btn--small" href="#editor">开始绘制</a>
+        <button type="button" class="btn btn--small btn--ghost open-examples-button">查看示例</button>
+      </div>
+    </div>
+  </header>
+  <main class="layout">
+    <section class="panel panel--ai-input panel--ai-input-inline" id="aiQuickPanel">
+      <div class="panel__header">
+        <h2>AI 快速输入</h2>
+        <div class="panel__actions">
+          <button type="button" id="aiTestButton" class="btn btn--small btn--ghost">测试 AI 接口</button>
+          <button type="button" id="aiQuickModifyButton" class="btn btn--small">AI 修改当前图</button>
+          <button type="button" id="aiQuickGenerateButton" class="btn btn--small btn--ghost">AI 生成架构图</button>
+        </div>
+      </div>
+      <div class="panel__body ai-quick">
+        <label class="ai-quick__label" for="aiQuickPrompt">
+          输入需求后将按照已配置的 AI 参数调用，并自动回写 Mermaid 编辑器内容：
+        </label>
+        <div id="aiProgressCard" class="ai-progress-card" role="status" aria-live="polite">
+          <span id="aiProgressText"></span>
+          <button type="button" id="aiProgressClose" class="ai-progress-card__close" aria-label="关闭状态提示">×</button>
+        </div>
+        <div id="aiErrorCard" class="ai-error-card" role="alert" aria-live="polite"></div>
+        <textarea id="aiQuickPrompt" rows="2" placeholder="例如：把节点改成更简洁的中文描述，并补充数据流..."></textarea>
+        <p class="ai-quick__hint">提示：如需修改 API 地址、模型或提示词模板，请点击右侧“AI 助手”。</p>
+      </div>
+    </section>
+    <section class="panel panel--editor" id="editor">
+      <div class="panel__header">
+        <h2>Mermaid 编辑器</h2>
+        <div class="panel__actions">
+          <button type="button" id="renderButton" class="btn btn--small">渲染 (Ctrl + Enter)</button>
+          <button type="button" id="copyButton" class="btn btn--small btn--ghost">复制代码</button>
+          <button type="button" id="downloadButton" class="btn btn--small btn--ghost">导出 SVG</button>
+        </div>
+      </div>
+      <div class="editor" data-editor>
+        <div class="editor__gutter" id="lineNumberGutter" aria-hidden="true"></div>
+        <div class="editor__surface">
+          <pre id="highlightLayer" class="editor__highlight" aria-hidden="true"></pre>
+          <textarea
+            id="mermaidInput"
+            spellcheck="false"
+            placeholder="在这里输入 Mermaid 代码..."
+            aria-label="Mermaid 编辑器"
+          ></textarea>
+        </div>
+      </div>
+      <div class="panel__footer">
+        <button type="button" class="btn btn--small btn--ghost open-examples-button">打开示例库</button>
+        <span id="cursorPositionLabel" class="line-count line-count--cursor">光标：第 1 行，第 1 列</span>
+        <span id="lineCountLabel" class="line-count">行数：1</span>
+      </div>
+    </section>
+    <section class="panel panel--preview" id="previewPanel">
+      <div class="panel__header">
+        <h2>渲染结果</h2>
+        <div class="panel__actions panel__actions--preview">
+          <button type="button" id="openAiButton" class="btn btn--small">AI 助手</button>
+          <button type="button" id="aiQuickFixButton" class="btn btn--small btn--ghost">AI 修复渲染</button>
+          <button type="button" id="copyDiagramButton" class="btn btn--small btn--ghost">复制 PNG</button>
+          <button type="button" id="downloadPngButton" class="btn btn--small btn--ghost">下载 PNG</button>
+          <div class="zoom-controls" role="group" aria-label="缩放控制">
+            <button type="button" id="zoomOutButton" class="btn btn--small btn--ghost" aria-label="缩小">-</button>
+            <span id="zoomDisplay" class="zoom-display" aria-live="polite">100%</span>
+            <button type="button" id="zoomInButton" class="btn btn--small btn--ghost" aria-label="放大">+</button>
+            <button type="button" id="resetViewButton" class="btn btn--small btn--ghost">重置视图</button>
+          </div>
+          <div class="version-select">
+            <label for="versionSelect">Mermaid 版本</label>
+            <select id="versionSelect" aria-label="选择 Mermaid 版本"></select>
+          </div>
+          <div class="theme-toggle">
+            <label class="switch">
+              <input type="checkbox" id="themeToggle" />
+              <span class="slider"></span>
+            </label>
+            <span id="themeLabel">浅色主题</span>
+          </div>
+        </div>
+      </div>
+      <div id="errorBox" role="alert"></div>
+      <div id="previewViewport" class="preview-viewport" aria-live="polite">
+        <div id="preview" class="preview-canvas"></div>
+      </div>
+    </section>
+  </main>
+  <div class="modal" id="aiModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal__overlay" id="aiModalOverlay"></div>
+    <section class="panel panel--ai modal__content" id="aiAssistant" role="document" aria-label="AI 助手">
+      <div class="panel__header">
+        <h2>AI 助手</h2>
+        <div class="panel__actions">
+          <button type="button" id="closeAiButton" class="btn btn--small btn--ghost">关闭</button>
+        </div>
+      </div>
+      <div class="panel__body ai-panel">
+        <div class="ai-section">
+          <h3>模型配置</h3>
+          <div class="ai-grid">
+            <label>
+              API 地址
+              <input type="url" id="aiEndpoint" placeholder="https://api.openai.com/v1/chat/completions" />
+            </label>
+            <label>
+              模型名称
+              <input type="text" id="aiModel" placeholder="gpt-4o-mini" />
+            </label>
+            <label class="ai-span-2">
+              API Key
+              <input type="password" id="aiApiKey" placeholder="sk-..." />
+            </label>
+            <label class="ai-span-2">
+              系统提示词（可选）
+              <textarea id="aiSystemPrompt" rows="3" placeholder="例如：你是 Mermaid 资深架构师..."></textarea>
+            </label>
+            <label class="ai-span-2 ai-checkline">
+              <input type="checkbox" id="aiProxyToggle" />
+              通过本地代理请求（解决 CORS）
+            </label>
+            <label class="ai-span-2 ai-checkline">
+              <input type="checkbox" id="aiAutoFixToggle" />
+              渲染报错后自动调用 AI 修复
+            </label>
+          </div>
+        </div>
+        <div class="ai-section">
+          <h3>提示词模板</h3>
+          <div class="ai-grid">
+            <label class="ai-span-2">
+              模板标题
+              <input type="text" id="promptTitle" placeholder="例如：电商系统架构" />
+            </label>
+            <label class="ai-span-2">
+              提示词内容（用于修改/生成）
+              <textarea id="promptBody" rows="6" placeholder="描述你的需求或系统结构..."></textarea>
+            </label>
+            <label class="ai-span-2">
+              用户补充输入（将附加到 AI 请求）
+              <textarea id="promptExtra" rows="3" placeholder="补充背景、风格或约束信息..."></textarea>
+            </label>
+            <label>
+              已保存模板
+              <select id="promptSelect"></select>
+            </label>
+            <div class="ai-actions">
+              <button type="button" id="promptApplyButton" class="btn btn--small btn--ghost">载入模板</button>
+              <button type="button" id="promptSaveButton" class="btn btn--small">保存模板</button>
+              <button type="button" id="promptDeleteButton" class="btn btn--small btn--ghost">删除模板</button>
+            </div>
+          </div>
+        </div>
+        <div class="ai-section">
+          <h3>执行状态</h3>
+          <p id="aiStatus" class="ai-status">提示词与配置会保存在浏览器本地。</p>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="modal" id="examplesModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal__overlay" id="examplesModalOverlay"></div>
+    <section class="panel panel--examples modal__content" id="examplesPanel" role="document" aria-label="内置示例">
+      <div class="panel__header">
+        <h2>内置示例</h2>
+        <div class="panel__actions">
+          <button type="button" id="closeExamplesButton" class="btn btn--small btn--ghost">关闭</button>
+        </div>
+      </div>
+      <div class="panel__body">
+        <div class="examples__grid" id="examplesGrid"></div>
+      </div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>Mermaid 最新版本离线体验站 · <span id="versionLabel">版本：未知</span></p>
+  </footer>
+  <div class="scroll-controls" id="scrollControls" aria-label="页面快速定位">
+    <button type="button" id="scrollTopButton" class="scroll-controls__button" aria-label="滚动到页面顶部">↑ 顶部</button>
+    <button type="button" id="scrollBottomButton" class="scroll-controls__button" aria-label="滚动到页面底部">↓ 底部</button>
+  </div>
+</body>
+</html>
