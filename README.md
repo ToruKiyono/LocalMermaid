@@ -126,6 +126,7 @@ flowchart LR
   QuickAI[AI 快速输入] --> AiHook[useAiAssistant.runAiTask]
   AiHook --> AiResponse[模型返回 Mermaid]
   AiResponse --> EditorState
+  PreviewError[渲染错误] --> AiHook
   EditorState --> Exporters[SVG/PNG 导出与复制]
 ```
 

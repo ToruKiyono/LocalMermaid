@@ -67,12 +67,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeydown);
   }, [mermaidText, render]);
 
-  useEffect(() => {
-    if (error && settings.autoFix) {
-      void handleAutoFix();
-    }
-  }, [error, handleAutoFix, settings.autoFix]);
-
   const themeConfig = useMemo(
     () => ({
       algorithm: themeMode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
@@ -211,6 +205,12 @@ export default function App() {
       render(result);
     }
   }, [activePackageId, error, mermaidText, registry.packages, render, runAiTask, settings.extraInput]);
+
+  useEffect(() => {
+    if (error && settings.autoFix) {
+      void handleAutoFix();
+    }
+  }, [error, handleAutoFix, settings.autoFix]);
 
   return (
     <ConfigProvider theme={themeConfig}>
