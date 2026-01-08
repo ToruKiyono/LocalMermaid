@@ -666,15 +666,23 @@ async function copyDiagramImage() {
     return;
   }
 
-  if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
-    setStatusMessage('当前浏览器不支持复制 PNG，请尝试下载后手动复制。', 'error');
-    return;
-  }
-
   try {
     const blob = await svgToPngBlob(currentSvg);
-    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-    showTempMessage('PNG 图像已复制到剪贴板');
+    const ClipboardItemClass = window.ClipboardItem || window.webkitClipboardItem;
+    if (navigator.clipboard?.write && ClipboardItemClass) {
+      await navigator.clipboard.write([new ClipboardItemClass({ 'image/png': blob })]);
+      showTempMessage('PNG 图像已复制到剪贴板');
+      return;
+    }
+
+    if (navigator.clipboard?.writeText) {
+      const dataUrl = buildSvgDataUrl(currentSvg);
+      await navigator.clipboard.writeText(dataUrl);
+      setStatusMessage('当前浏览器仅支持复制 PNG 数据链接，请在支持粘贴图片的应用中尝试。', 'info');
+      return;
+    }
+
+    setStatusMessage('当前浏览器不支持复制 PNG，请尝试下载后手动复制。', 'error');
   } catch (err) {
     console.error(err);
     setStatusMessage('复制 PNG 失败，请检查浏览器权限或重试。', 'error');
