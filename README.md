@@ -14,6 +14,7 @@
 - 🎻 **视觉风格**：采用古典衬线字体、徽章饰线与柔和纹理渐变，增强留白与层次，整体更优雅。
 - 🧭 **顶部导航**：更紧凑的顶部栏样式，减少空间占用并保持关键入口可见。
 - 🧩 **CORS 处理**：内置本地代理模式，解决浏览器调用外部模型 API 的跨域问题。
+- ⚠️ **配置提醒**：未配置 AI 地址/模型/Key 时调用 AI 会在页面提示补全信息。
 - ⏫ **快速定位**：浮动按钮支持一键跳转页面顶部/底部，长页面也能迅速回到编辑器或示例弹窗。
 - 🔍 **语法校验**：渲染前自动调用 `mermaid.parse`，第一时间暴露语法错误并提示定位。
 - 🎨 **示例图库**：涵盖流程、时序、状态、旅程、甘特、类图、ER、Git Graph、饼图、折线/柱状/XY 图、思维导图、时间线、需求图、象限图、C4、桑基图等 16+ 彩色案例，全部通过 v11.12.1 语法校验。
@@ -28,6 +29,8 @@
 - 📚 更新 README 的系统架构图、数据流图、调用图与用户用例图，补充 AI 弹窗打开与关闭路径。
 - 🔢 修复超长 Mermaid 文档的行号显示问题，确保 300 行以上也能完整呈现。
 - 🛠️ 强化 AI 修复提示，确保根据当前 Mermaid 版本修复缺失 end 等语法错误，并在必要时转换为兼容图类型。
+- 🧹 Mermaid 报错时关闭引擎默认错误渲染，避免页面底部出现额外报错文本。
+- 📏 修复行数统计在结尾换行时偏多的问题，确保显示与实际行数一致。
 
 ## 使用指南
 
@@ -191,6 +194,7 @@ graph TD
   AiRequester --> ProxyEndpoint[/proxy 代理]
   ProxyEndpoint --> LlmApi[模型 API]
   Mermaid --> RenderPipeline[渲染流程<br/>mermaid.render]
+  Mermaid --> ErrorSuppress[关闭错误渲染]
   RenderPipeline --> SvgBuilder[SVG 构建器<br/>buildSvgElement]
   SvgBuilder --> NamespaceGuard[命名空间补全<br/>ensureSvgNamespaces]
   NamespaceGuard --> PreviewSizer[SVG 尺寸同步<br/>syncPreviewCanvasSize]
@@ -235,6 +239,7 @@ flowchart LR
     Validate -->|成功| Render
     Validate -->|失败| ErrorBox
     Render --> SvgBuilderDF[SVG 构建器]
+    MermaidReady --> ErrorSuppressDF[关闭错误渲染]
     SvgBuilderDF --> NamespaceGuardDF[命名空间补全]
     NamespaceGuardDF --> PreviewSizerDF[SVG 尺寸同步]
     PreviewSizerDF --> Preview[SVG 预览画布]
@@ -347,6 +352,7 @@ graph TD
   activate --> initialize[initializeMermaid]
   activate --> render
   initialize --> updateVersionLabel
+  initialize --> suppressErrors[suppressErrorRendering]
   render --> svgBuilder[buildSvgElement]
   render --> namespaceGuard[ensureSvgNamespaces]
   namespaceGuard --> sizeSync[syncPreviewCanvasSize]

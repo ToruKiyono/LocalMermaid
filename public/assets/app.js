@@ -130,7 +130,8 @@ const DEFAULT_CONFIG = {
   startOnLoad: false,
   securityLevel: 'strict',
   theme: currentTheme,
-  fontFamily: 'Inter, "Segoe UI", "PingFang SC", sans-serif'
+  fontFamily: 'Inter, "Segoe UI", "PingFang SC", sans-serif',
+  suppressErrorRendering: true
 };
 
 bootstrap();
@@ -1061,11 +1062,15 @@ async function runAiTask(mode, options = {}) {
         : '';
   const extraInput = promptExtraInput ? promptExtraInput.value.trim() : '';
   if (!promptBody && mode !== 'auto-fix') {
-    updateAiStatus('请先填写提示词内容。', 'error');
+    const message = '请先填写提示词内容。';
+    updateAiStatus(message, 'error');
+    showAiErrorCard(message);
     return;
   }
   if (!aiSettings.endpoint || !aiSettings.model || !aiSettings.apiKey) {
-    updateAiStatus('请先补全 API 地址、模型名称和 API Key。', 'error');
+    const message = '请先补全 API 地址、模型名称和 API Key。';
+    updateAiStatus(message, 'error');
+    showAiErrorCard(message);
     return;
   }
   const currentCode = mermaidInput?.value || '';
@@ -1474,10 +1479,7 @@ function updateLineDecorations(value) {
 
 function calculateLineCount(value) {
   if (!value) return 1;
-  let count = value.split('\n').length;
-  if (value.endsWith('\n')) {
-    count += 1;
-  }
+  const count = value.split('\n').length;
   return Math.max(1, count);
 }
 
