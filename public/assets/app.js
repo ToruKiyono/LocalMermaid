@@ -42,8 +42,6 @@ const aiTestButton = document.getElementById('aiTestButton');
 const aiQuickFixButton = document.getElementById('aiQuickFixButton');
 const aiQuickModifyButton = document.getElementById('aiQuickModifyButton');
 const aiQuickGenerateButton = document.getElementById('aiQuickGenerateButton');
-const aiModifyButton = document.getElementById('aiModifyButton');
-const aiArchitectureButton = document.getElementById('aiArchitectureButton');
 const aiEndpointInput = document.getElementById('aiEndpoint');
 const aiModelInput = document.getElementById('aiModel');
 const aiApiKeyInput = document.getElementById('aiApiKey');
@@ -64,6 +62,7 @@ let currentSvg = '';
 let messageTimer = null;
 let renderToken = 0;
 let reportedVersion = '';
+let aiProgressTimer = null;
 let mermaidRegistry = { packages: [] };
 let activePackage = null;
 let mermaidReady = false;
@@ -869,11 +868,19 @@ function showAiProgressCard(message) {
   if (!aiProgressCard) return;
   const text = message ? String(message).trim() : '';
   if (!text) {
+    if (aiProgressTimer) {
+      window.clearTimeout(aiProgressTimer);
+      aiProgressTimer = null;
+    }
     if (aiProgressText) {
       aiProgressText.textContent = '';
     }
     aiProgressCard.classList.remove('is-visible');
     return;
+  }
+  if (aiProgressTimer) {
+    window.clearTimeout(aiProgressTimer);
+    aiProgressTimer = null;
   }
   if (aiProgressText) {
     aiProgressText.textContent = text;
@@ -1103,17 +1110,19 @@ async function runAiTask(mode, options = {}) {
       return;
     }
     applyMermaidCode(mermaidCode);
-    updateAiStatus(
+    const successMessage =
       mode === 'modify'
         ? '已更新 Mermaid 代码。'
         : mode === 'auto-fix'
           ? '已自动修复 Mermaid 代码。'
           : mode === 'test'
             ? 'AI 接口可用，已返回示例 Mermaid。'
-            : '已生成 Mermaid 架构图。',
-      'success'
-    );
-    showAiProgressCard('');
+            : '已生成 Mermaid 架构图。';
+    updateAiStatus(successMessage, 'success');
+    showAiProgressCard(successMessage);
+    aiProgressTimer = window.setTimeout(() => {
+      showAiProgressCard('');
+    }, 2400);
   } catch (error) {
     console.error('AI 请求失败：', error);
     const message = error.message || error;
@@ -1122,7 +1131,10 @@ async function runAiTask(mode, options = {}) {
       : '';
     const fullMessage = `AI 请求失败：${message}${corsHint}`;
     updateAiStatus(fullMessage, 'error');
-    showAiProgressCard('');
+    showAiProgressCard(fullMessage);
+    aiProgressTimer = window.setTimeout(() => {
+      showAiProgressCard('');
+    }, 3200);
     showAiErrorCard(fullMessage);
   } finally {
     if (mode === 'auto-fix') {
@@ -1298,12 +1310,6 @@ function bindEvents() {
   if (promptExtraInput) {
     promptExtraInput.addEventListener('change', syncAiSettingsFromForm);
   }
-  if (aiModifyButton) {
-    aiModifyButton.addEventListener('click', () => runAiTask('modify'));
-  }
-  if (aiArchitectureButton) {
-    aiArchitectureButton.addEventListener('click', () => runAiTask('architecture'));
-  }
 
   window.addEventListener('scroll', updateScrollControlsVisibility, { passive: true });
   window.addEventListener('resize', () => {
@@ -1451,11 +1457,13 @@ function updateLineDecorations(value) {
   if (!lineNumberGutter && !lineCountLabel) return;
   const count = calculateLineCount(value);
   if (lineNumberGutter) {
-    const numbers = [];
+    const fragment = document.createDocumentFragment();
     for (let index = 1; index <= count; index += 1) {
-      numbers.push(`<span>${index}</span>`);
+      const span = document.createElement('span');
+      span.textContent = String(index);
+      fragment.appendChild(span);
     }
-    lineNumberGutter.innerHTML = numbers.join('');
+    lineNumberGutter.replaceChildren(fragment);
     lineNumberGutter.style.transform = `translateY(${-mermaidInput.scrollTop}px)`;
     syncOverlayMetrics();
   }
