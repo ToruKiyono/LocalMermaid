@@ -669,6 +669,10 @@ async function copyDiagramImage() {
   try {
     const blob = await svgToPngBlob(currentSvg);
     const ClipboardItemClass = window.ClipboardItem || window.webkitClipboardItem;
+    if (!window.isSecureContext) {
+      setStatusMessage('复制 PNG 需要 HTTPS 或 localhost 环境，请在安全上下文中尝试。', 'error');
+      return;
+    }
     if (navigator.clipboard?.write && ClipboardItemClass) {
       await navigator.clipboard.write([new ClipboardItemClass({ 'image/png': blob })]);
       showTempMessage('PNG 图像已复制到剪贴板');
