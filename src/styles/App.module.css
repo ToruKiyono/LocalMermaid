@@ -1,0 +1,193 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--panel-border);
+}
+
+.headerTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.headerTitle h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.headerSubtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 16px;
+}
+
+.panelActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aiPanel {
+  grid-column: span 12;
+}
+
+.editorPanel {
+  grid-column: span 6;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.previewPanel {
+  grid-column: span 6;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 1200px) {
+  .editorPanel,
+  .previewPanel {
+    grid-column: span 12;
+  }
+}
+
+.textarea {
+  min-height: 320px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', monospace;
+  font-size: 13px;
+}
+
+.previewContainer {
+  border-radius: 12px;
+  border: 1px dashed var(--panel-border);
+  padding: 12px;
+  min-height: 320px;
+  overflow: auto;
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.previewSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.previewContainer svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.status {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.statusError {
+  color: #ef4444;
+}
+
+.examplesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.exampleCard {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: rgba(148, 163, 184, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exampleName {
+  font-weight: 600;
+}
+
+.aiStatusCard {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--text-primary);
+}
+
+.aiErrorCard {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.formColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #0284c7;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
