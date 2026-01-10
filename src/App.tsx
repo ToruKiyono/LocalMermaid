@@ -20,6 +20,13 @@ export default function App() {
   const [quickPrompt, setQuickPrompt] = useState('');
   const [mermaidText, setMermaidText] = useState(examples[0].code);
   const latestMermaidText = useRef(mermaidText);
+  const lineCount = useMemo(() => {
+    const normalized = mermaidText.replace(/\r\n/g, '\n');
+    if (!normalized.trim()) {
+      return 1;
+    }
+    return normalized.split('\n').length;
+  }, [mermaidText]);
 
   const {
     registry,
@@ -234,6 +241,7 @@ export default function App() {
         <div className={styles.grid}>
           <EditorPanel
             value={mermaidText}
+            lineCount={lineCount}
             onChange={setMermaidText}
             onRender={handleRender}
             onCopy={handleCopyCode}

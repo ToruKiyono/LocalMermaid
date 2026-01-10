@@ -3,6 +3,7 @@ import styles from '../styles/App.module.css';
 
 interface EditorPanelProps {
   value: string;
+  lineCount: number;
   onChange: (value: string) => void;
   onRender: () => void;
   onCopy: () => void;
@@ -10,7 +11,15 @@ interface EditorPanelProps {
   loading: boolean;
 }
 
-export function EditorPanel({ value, onChange, onRender, onCopy, onOpenExamples, loading }: EditorPanelProps) {
+export function EditorPanel({
+  value,
+  lineCount,
+  onChange,
+  onRender,
+  onCopy,
+  onOpenExamples,
+  loading
+}: EditorPanelProps) {
   return (
     <section className={`${styles.panel} ${styles.editorPanel}`}>
       <div className={styles.panelHeader}>
@@ -32,7 +41,10 @@ export function EditorPanel({ value, onChange, onRender, onCopy, onOpenExamples,
         onChange={(event) => onChange(event.target.value)}
         placeholder="在这里输入 Mermaid 代码..."
       />
-      <span className={styles.status}>提示：渲染前会使用 Mermaid.parse 进行校验。</span>
+      <div className={styles.panelActions}>
+        <span className={styles.status}>行数：{lineCount}</span>
+        <span className={styles.status}>提示：渲染前会使用 Mermaid.parse 进行校验。</span>
+      </div>
     </section>
   );
 }

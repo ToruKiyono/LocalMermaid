@@ -20,7 +20,7 @@
    npm install
    ```
 
-   > React + Vite 版本必须先安装依赖，无法再直接打开静态 HTML 文件。
+   > React + Vite 版本必须先安装依赖，无法再直接打开静态 HTML 文件。当前仓库已移除 `package-lock.json`，依赖来源由 npm 自动解析。
 
 2. **启动开发服务**
 
@@ -99,6 +99,7 @@ graph TD
   App --> HeaderBar[HeaderBar]
   App --> AiQuickPanel[AI 快速输入面板]
   App --> EditorPanel[Mermaid 编辑器面板]
+  EditorPanel --> LineCount[行数统计]
   App --> PreviewPanel[渲染结果面板]
   App --> ExamplesModal[示例库弹窗]
   App --> AiConfigModal[AI 配置弹窗]
